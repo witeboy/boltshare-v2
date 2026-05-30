@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+/* ── BoltShare Design Tokens ─────────────── */
+:root {
+  --bs-bg:          #0D0D0D;
+  --bs-surface:     #1A1A1A;
+  --bs-surface-2:   #242424;
+  --bs-surface-3:   #2E2E2E;
+  --bs-gold:        #F5C518;
+  --bs-gold-hover:  #E6B800;
+  --bs-gold-muted:  rgba(245, 197, 24, 0.15);
+  --bs-gold-glow:   rgba(245, 197, 24, 0.25);
+  --bs-text:        #FFFFFF;
+  --bs-text-2:      #B0B0B0;
+  --bs-text-muted:  #8A8A8A;
+  --bs-text-dim:    #555555;
+  --bs-border:      rgba(255, 255, 255, 0.08);
+  --bs-border-2:    rgba(255, 255, 255, 0.14);
+  --bs-success:     #1D9E75;
+  --bs-error:       #E24B4A;
+  --bs-warning:     #F5A623;
+  --bs-r-sm:        8px;
+  --bs-r-md:        14px;
+  --bs-r-lg:        20px;
+  --bs-r-xl:        28px;
+  --bs-shadow:      0 2px 16px rgba(0, 0, 0, 0.4);
+  --bs-shadow-gold: 0 0 24px rgba(245, 197, 24, 0.2);
+}
+
+/* ── Base reset ───────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bs-bg);
+  color: var(--bs-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bs-bg); }
+::-webkit-scrollbar-thumb { background: var(--bs-surface-3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bs-text-dim); }
+
+/* ── Typography ───────────────────────────── */
+h1 { font-size: 2rem;    font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+h2 { font-size: 1.5rem;  font-weight: 600; line-height: 1.2; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+h4 { font-size: 0.95rem; font-weight: 500; }
+p  { line-height: 1.6; color: var(--bs-text-2); }
+
+/* ── Reusable component classes ───────────── */
+.bs-page {
+  min-height: 100vh;
+  background: var(--bs-bg);
+  color: var(--bs-text);
+  padding-bottom: 80px;
+}
+
+.bs-card {
+  background: var(--bs-surface);
+  border: 0.5px solid var(--bs-border);
+  border-radius: var(--bs-r-md);
+  padding: 1rem;
+}
+
+.bs-card-lg {
+  background: var(--bs-surface);
+  border: 0.5px solid var(--bs-border);
+  border-radius: var(--bs-r-lg);
+  padding: 1.25rem;
+}
+
+.bs-btn-gold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  background: var(--bs-gold);
+  color: #000;
+  border: none;
+  border-radius: var(--bs-r-md);
+  padding: 0.85rem 1.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s, transform 0.1s;
+}
+.bs-btn-gold:hover  { background: var(--bs-gold-hover); }
+.bs-btn-gold:active { transform: scale(0.98); }
+
+.bs-btn-dark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  background: var(--bs-surface-2);
+  color: var(--bs-text);
+  border: 0.5px solid var(--bs-border-2);
+  border-radius: var(--bs-r-md);
+  padding: 0.85rem 1.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s;
+}
+.bs-btn-dark:hover { background: var(--bs-surface-3); }
+
+.bs-input {
+  background: var(--bs-surface-2);
+  border: 0.5px solid var(--bs-border-2);
+  border-radius: var(--bs-r-sm);
+  color: var(--bs-text);
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.bs-input::placeholder { color: var(--bs-text-muted); }
+.bs-input:focus { border-color: var(--bs-gold); }
+
+.bs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--bs-surface-2);
+  border: 0.5px solid var(--bs-border-2);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--bs-text-2);
+}
+
+.bs-badge-gold {
+  background: var(--bs-gold-muted);
+  border-color: rgba(245, 197, 24, 0.3);
+  color: var(--bs-gold);
+}
+
+.bs-badge-green {
+  background: rgba(29, 158, 117, 0.15);
+  border-color: rgba(29, 158, 117, 0.3);
+  color: var(--bs-success);
+}
+
+.bs-divider {
+  border: none;
+  border-top: 0.5px solid var(--bs-border);
+  margin: 1rem 0;
+}
+
+.bs-glow {
+  filter: drop-shadow(0 0 20px rgba(245, 197, 24, 0.4));
+}
+
+.bs-upload-zone {
+  border: 1.5px dashed var(--bs-gold);
+  border-radius: var(--bs-r-lg);
+  background: var(--bs-gold-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+}
+.bs-upload-zone:hover { background: rgba(245, 197, 24, 0.2); }
+
+.bs-stat {
+  background: var(--bs-surface);
+  border: 0.5px solid var(--bs-border);
+  border-radius: var(--bs-r-md);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bs-stat-num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--bs-text);
+  line-height: 1;
+}
+
+.bs-stat-label {
+  font-size: 0.72rem;
+  color: var(--bs-text-muted);
+  font-weight: 500;
+}
+
+.bs-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #111111;
+  border-top: 0.5px solid var(--bs-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0.6rem 0 calc(0.6rem + env(safe-area-inset-bottom));
+  z-index: 50;
+}
+
+.bs-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 0.5px solid var(--bs-border);
+}
+.bs-list-item:last-child { border-bottom: none; }
