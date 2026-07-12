@@ -49,7 +49,7 @@ export default function HistoryPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) router.push('/login')
+    if (!isLoadingAuth && !isAuthenticated) router.push('/')
   }, [isAuthenticated, isLoadingAuth])
 
   useEffect(() => {
