@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isLoadingAuth && !isAuthenticated) {
-      router.push('/login')
+      router.push('/')
     }
   }, [isAuthenticated, isLoadingAuth])
 
@@ -56,8 +56,8 @@ export default function DashboardPage() {
 
       if (data) {
         setFiles(data.slice(0, 5))
-        const active = data.filter(f => f.status === 'active' && new Date(f.expires_at) > new Date()).length
-        const downloads = data.reduce((a, f) => a + (f.download_count || 0), 0)
+        const active = data.filter((f: any) => f.status === 'active' && new Date(f.expires_at) > new Date()).length
+        const downloads = data.reduce((total: number, f: any) => total + (f.download_count || 0), 0)
         setStats({ total: data.length, active, downloads })
       }
       setLoading(false)
