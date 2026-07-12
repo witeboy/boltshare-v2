@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { User, Session } from '@supabase/supabase-js'
+import type { AuthChangeEvent, User, Session } from '@supabase/supabase-js'
 
 interface AuthContextType {
   user: User | null
@@ -28,15 +28,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setIsLoadingAuth(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }: { data: { session: Session | null } }) => {
+        setSession(session)
+        setUser(session?.user ?? null)
+      })
+      .catch((error: unknown) => {
+        console.error('Unable to restore the BoltShare session:', error)
+        setSession(null)
+        setUser(null)
+      })
+      .finally(() => setIsLoadingAuth(false))
 
     // Listen for auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (_event: AuthChangeEvent, session: Session | null) => {
         setSession(session)
         setUser(session?.user ?? null)
         setIsLoadingAuth(false)
