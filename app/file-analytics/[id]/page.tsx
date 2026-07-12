@@ -72,7 +72,7 @@ export default function FileAnalyticsPage({ params }: { params: Promise<{ id: st
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) router.push('/login')
+    if (!isLoadingAuth && !isAuthenticated) router.push('/')
   }, [isAuthenticated, isLoadingAuth])
 
   useEffect(() => {
