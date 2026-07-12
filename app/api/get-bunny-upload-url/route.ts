@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createServerClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'You must be signed in to upload files' }, { status: 401 })
+    }
+
     const formData   = await req.formData()
     const file       = formData.get('file') as File
     const fileName   = formData.get('fileName') as string || file?.name
