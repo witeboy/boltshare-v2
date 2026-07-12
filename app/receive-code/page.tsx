@@ -17,15 +17,16 @@ export default function ReceiveCodePage() {
     if (!token) { toast.error('Please enter a code'); return }
 
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('shared_files')
       .select('id, status, expires_at')
       .eq('share_token', token)
-      .single()
+      .limit(1)
+      .maybeSingle()
 
     setLoading(false)
 
-    if (!data) {
+    if (error || !data) {
       toast.error('Code not found. Check and try again.')
       return
     }
