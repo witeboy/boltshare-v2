@@ -38,7 +38,7 @@ export default function TeamPage() {
   const [removing, setRemoving] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) router.push('/login')
+    if (!isLoadingAuth && !isAuthenticated) router.push('/')
   }, [isAuthenticated, isLoadingAuth])
 
   useEffect(() => {
