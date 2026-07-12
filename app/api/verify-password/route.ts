@@ -12,13 +12,14 @@ export async function POST(req: NextRequest) {
     const supabase = createAdminClient()
 
     // Get the file with password hash
-    const { data: file } = await supabase
+    const { data: file, error: fileError } = await supabase
       .from('shared_files')
       .select('id, password_hash')
       .eq('share_token', token)
-      .single()
+      .limit(1)
+      .maybeSingle()
 
-    if (!file) {
+    if (fileError || !file) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
