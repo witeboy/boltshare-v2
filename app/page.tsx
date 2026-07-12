@@ -87,6 +87,12 @@ export default function OnboardingPage() {
       if (seen && !isLoadingAuth && !isAuthenticated) {
         setShowLogin(true)
       }
+
+      if (new URLSearchParams(window.location.search).has('auth_error')) {
+        setShowLogin(true)
+        toast.error('That sign-in link is invalid or has expired. Please request a new one.')
+        window.history.replaceState({}, '', window.location.pathname)
+      }
     }
   }, [isLoadingAuth, isAuthenticated])
 
@@ -103,24 +109,32 @@ export default function OnboardingPage() {
   }
 
   const handleLogin = async () => {
-    if (!email || !email.includes('@')) {
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       toast.error('Please enter a valid email')
       return
     }
+
     setSending(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
-    setSending(false)
-    if (error) {
-      toast.error(error.message)
-    } else {
-      setSent(true)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('bs_onboarded', '1')
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithOtp({
+        email: normalizedEmail,
+        options: { emailRedirectTo: new URL('/auth/callback', window.location.origin).toString() },
+      })
+
+      if (error) {
+        toast.error(error.message)
+        return
       }
+
+      setEmail(normalizedEmail)
+      setSent(true)
+      localStorage.setItem('bs_onboarded', '1')
+    } catch {
+      toast.error('We could not send the sign-in email. Please check your connection and try again.')
+    } finally {
+      setSending(false)
     }
   }
 
