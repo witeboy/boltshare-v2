@@ -177,7 +177,7 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     setLoggingOut(true)
     await logout()
-    router.push('/login')
+    router.push('/')
   }
 
   const handleDeleteAccount = async () => {
@@ -213,7 +213,7 @@ export default function SettingsPage() {
 
       await logout()
       toast.success('Account deleted successfully')
-      router.push('/login')
+    router.push('/')
     } catch (err) {
       console.error(err)
       toast.error('Failed to delete account. Please try again.')
