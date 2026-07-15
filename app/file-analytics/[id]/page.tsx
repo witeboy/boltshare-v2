@@ -36,6 +36,24 @@ function timeAgo(dateStr: string) {
   return Math.floor(h / 24) + 'd ago'
 }
 
+interface SharedFile {
+  id: string
+  file_name: string
+  file_type: string
+  file_size: number
+  share_token: string
+  download_count: number
+  max_downloads: number | null
+  expires_at: string
+}
+
+interface DownloadLog {
+  id: string
+  downloaded_at: string
+  ip_address: string | null
+  receiver_email: string | null
+}
+
 // Simple bar chart — no external library needed
 function MiniBarChart({ data }: { data: { day: string; downloads: number }[] }) {
   const max = Math.max(...data.map(d => d.downloads), 1)
@@ -66,19 +84,10 @@ export default function FileAnalyticsPage({ params }: { params: Promise<{ id: st
   const router   = useRouter()
   const supabase = createClient()
 
-  const [file, setFile]     = useState<any>(null)
-  const [logs, setLogs]     = useState<any[]>([])
+  const [file, setFile]     = useState<SharedFile | null>(null)
+  const [logs, setLogs]     = useState<DownloadLog[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
-
-  useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) router.push('/')
-  }, [isAuthenticated, isLoadingAuth])
-
-  useEffect(() => {
-    if (!user || !id) return
-    loadData()
-  }, [user, id])
 
   async function loadData() {
     setLoading(true)
@@ -90,6 +99,16 @@ export default function FileAnalyticsPage({ params }: { params: Promise<{ id: st
     setLogs(logData || [])
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (!isLoadingAuth && !isAuthenticated) router.push('/')
+  }, [isAuthenticated, isLoadingAuth, router])
+
+  useEffect(() => {
+    if (!user || !id) return
+    queueMicrotask(() => loadData())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, id])
 
   // Build last 7 days chart
   const chartData = useMemo(() => {
@@ -117,18 +136,17 @@ export default function FileAnalyticsPage({ params }: { params: Promise<{ id: st
     if (!file) return
     setDeleting(true)
     try {
-      await supabase.from('shared_files').delete().eq('id', file.id)
-      if (file.bunny_path) {
-        await fetch('/api/delete-from-bunny', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bunnyPath: file.bunny_path }),
-        })
-      }
+      const response = await fetch('/api/delete-from-bunny', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId: file.id }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'Delete failed')
       toast.success('File deleted')
       router.push('/history')
-    } catch {
-      toast.error('Delete failed')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Delete failed')
       setDeleting(false)
     }
   }

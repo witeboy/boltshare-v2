@@ -2,21 +2,19 @@
 
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { AlertTriangle, Archive, Download, FileText, Film, Image as ImageIcon, Loader2, Lock, Shield, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type SharedFile = {
   id: string
-  file_name: string
-  file_type: string
-  file_url: string
-  file_size: number
+  fileName: string
+  fileType: string
+  fileSize: number
   status: string
-  expires_at: string
-  max_downloads: number | null
-  download_count: number | null
-  password_hash: string | null
+  expiresAt: string
+  maxDownloads: number | null
+  downloadCount: number
+  passwordProtected: boolean
 }
 
 function fileIcon(type: string, size = 28) {
@@ -37,8 +35,8 @@ function availabilityError(files: SharedFile[]) {
   const firstFile = files[0]
   if (!firstFile) return 'This link is invalid or has been removed.'
   if (firstFile.status !== 'active') return 'This file has been deleted by the sender.'
-  if (new Date(firstFile.expires_at) < new Date()) return 'This link has expired.'
-  if (firstFile.max_downloads && (firstFile.download_count ?? 0) >= firstFile.max_downloads) {
+  if (new Date(firstFile.expiresAt) < new Date()) return 'This link has expired.'
+  if (firstFile.maxDownloads && firstFile.downloadCount >= firstFile.maxDownloads) {
     return 'This link has reached its maximum number of downloads.'
   }
   return 'This link is unavailable.'
@@ -46,7 +44,6 @@ function availabilityError(files: SharedFile[]) {
 
 export default function ReceivePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
-  const supabase = createClient()
   const [files, setFiles] = useState<SharedFile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -56,70 +53,61 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
 
   useEffect(() => {
     async function loadFiles() {
-      const { data, error: queryError } = await supabase
-        .from('shared_files')
-        .select('id, file_name, file_type, file_url, file_size, status, expires_at, max_downloads, download_count, password_hash')
-        .eq('share_token', token)
-        .order('created_at', { ascending: true })
+      try {
+        const response = await fetch(`/api/share/${encodeURIComponent(token)}`, { cache: 'no-store' })
+        const payload = await response.json()
+        const sharedFiles = (payload.files ?? []) as SharedFile[]
+        const activeFiles = sharedFiles.filter(file =>
+          file.status === 'active' &&
+          new Date(file.expiresAt) >= new Date() &&
+          (!file.maxDownloads || file.downloadCount < file.maxDownloads)
+        )
 
-      const sharedFiles = (data ?? []) as SharedFile[]
-      const activeFiles = sharedFiles.filter(file =>
-        file.status === 'active' &&
-        new Date(file.expires_at) >= new Date() &&
-        (!file.max_downloads || (file.download_count ?? 0) < file.max_downloads)
-      )
+        if (!response.ok || activeFiles.length === 0) {
+          setError(payload.error || availabilityError(sharedFiles))
+          return
+        }
 
-      if (queryError || activeFiles.length === 0) {
-        setError(availabilityError(sharedFiles))
+        setFiles(activeFiles)
+        setPwLocked(activeFiles.some(file => file.passwordProtected))
+      } catch {
+        setError('This share is temporarily unavailable. Please try again.')
+      } finally {
         setLoading(false)
-        return
       }
-
-      setFiles(activeFiles)
-      setPwLocked(activeFiles.some(file => Boolean(file.password_hash)))
-      setLoading(false)
     }
 
     loadFiles()
-  }, [supabase, token])
+  }, [token])
 
   async function handleDownload(file: SharedFile) {
-    if (pwLocked) {
-      const passwordResponse = await fetch('/api/verify-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password }),
-      })
-      const passwordPayload = await passwordResponse.json()
-
-      if (!passwordResponse.ok || !passwordPayload.valid) {
-        toast.error(passwordPayload.error || 'Wrong password')
-        return
-      }
-
-      setPwLocked(false)
-    }
-
     setDownloadingId(file.id)
     try {
-      const trackingResponse = await fetch('/api/track-download', {
+      const response = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId: file.id }),
+        body: JSON.stringify({ fileId: file.id, token, password: pwLocked ? password : '' }),
       })
-      const trackingPayload = await trackingResponse.json()
+      if (!response.ok) {
+        const payload = await response.json()
+        throw new Error(payload.error || 'Download could not be started')
+      }
 
-      if (!trackingResponse.ok) throw new Error(trackingPayload.error || 'Download could not be started')
-
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
-      anchor.href = file.file_url
-      anchor.download = file.file_name
-      anchor.target = '_blank'
-      anchor.rel = 'noopener'
+      anchor.href = objectUrl
+      anchor.download = file.fileName
       document.body.appendChild(anchor)
       anchor.click()
       document.body.removeChild(anchor)
-      toast.success(`${file.file_name} is downloading`)
+      URL.revokeObjectURL(objectUrl)
+      setPwLocked(false)
+      setFiles(current => current.map(item => item.id === file.id
+        ? { ...item, downloadCount: item.downloadCount + 1 }
+        : item
+      ))
+      toast.success(`${file.fileName} downloaded`)
     } catch (downloadError) {
       toast.error(downloadError instanceof Error ? downloadError.message : 'Download failed. Please try again.')
     } finally {
@@ -185,16 +173,16 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
               <article key={file.id} style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '1.125rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#242424', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {fileIcon(file.file_type)}
+                    {fileIcon(file.fileType)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.file_name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#8A8A8A', marginTop: '3px' }}>{formatBytes(file.file_size)}</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.fileName}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#8A8A8A', marginTop: '3px' }}>{formatBytes(file.fileSize)}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', paddingTop: '12px', borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
                   <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#1D9E75', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.72rem', color: '#8A8A8A' }}>Expires {new Date(file.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  <span style={{ fontSize: '0.72rem', color: '#8A8A8A' }}>Expires {new Date(file.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <button onClick={() => handleDownload(file)} disabled={Boolean(downloadingId)}
                   style={{ width: '100%', background: isDownloading ? '#B8960F' : '#F5C518', color: '#000', border: 'none', borderRadius: '12px', padding: '0.8rem', fontWeight: 700, fontSize: '0.9rem', cursor: downloadingId ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px' }}>

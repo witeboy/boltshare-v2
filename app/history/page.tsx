@@ -38,24 +38,29 @@ function formatBytes(bytes: number) {
 
 type Tab = 'all' | 'sent' | 'received'
 
+interface SharedFile {
+  id: string
+  file_name: string
+  file_type: string
+  file_size: number
+  share_token: string
+  sender_email: string
+  recipient_email: string | null
+  download_count: number
+  max_downloads: number | null
+  expires_at: string
+  created_at: string
+}
+
 export default function HistoryPage() {
   const { user, isAuthenticated, isLoadingAuth } = useAuth()
   const router = useRouter()
   const supabase = createClient()
 
-  const [files, setFiles]     = useState<any[]>([])
+  const [files, setFiles]     = useState<SharedFile[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab]         = useState<Tab>('all')
   const [deleting, setDeleting] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) router.push('/')
-  }, [isAuthenticated, isLoadingAuth])
-
-  useEffect(() => {
-    if (!user) return
-    loadFiles()
-  }, [user])
 
   async function loadFiles() {
     setLoading(true)
@@ -68,23 +73,30 @@ export default function HistoryPage() {
     setLoading(false)
   }
 
-  async function deleteFile(id: string, bunnyPath: string) {
+  useEffect(() => {
+    if (!isLoadingAuth && !isAuthenticated) router.push('/')
+  }, [isAuthenticated, isLoadingAuth, router])
+
+  useEffect(() => {
+    if (!user) return
+    queueMicrotask(() => loadFiles())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  async function deleteFile(id: string) {
     setDeleting(id)
     try {
-      // Delete from Supabase
-      await supabase.from('shared_files').delete().eq('id', id)
-      // Delete from Bunny
-      if (bunnyPath) {
-        await fetch('/api/delete-from-bunny', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bunnyPath }),
-        })
-      }
+      const response = await fetch('/api/delete-from-bunny', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId: id }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'Delete failed')
       setFiles(prev => prev.filter(f => f.id !== id))
       toast.success('File deleted')
-    } catch {
-      toast.error('Delete failed')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Delete failed')
     } finally {
       setDeleting(null)
     }
@@ -95,7 +107,7 @@ export default function HistoryPage() {
     toast.success('Link copied!')
   }
 
-  const isExpired = (f: any) => new Date(f.expires_at) < new Date()
+  const isExpired = (f: SharedFile) => new Date(f.expires_at) < new Date()
 
   const filtered = files.filter(f => {
     if (tab === 'sent')     return f.sender_email === user?.email
@@ -194,7 +206,7 @@ export default function HistoryPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => deleteFile(f.id, f.bunny_path)}
+                      onClick={() => deleteFile(f.id)}
                       disabled={deleting === f.id}
                       style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(226,75,74,0.1)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
