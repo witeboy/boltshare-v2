@@ -8,13 +8,26 @@ import {
   Copy, Share2, QrCode, Clock, Download, Lock,
   Loader2, X, File
 } from 'lucide-react'
-import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { QRCodeSVG } from 'qrcode.react'
+import { MAX_TRANSFER_BYTES } from '@/lib/config'
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return bytes + ' B'
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+const SHARE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+function createShareCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(10))
+  return Array.from(bytes, byte => SHARE_CODE_ALPHABET[byte % SHARE_CODE_ALPHABET.length]).join('')
+}
+
+async function hashPassword(password: string) {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password))
+  return Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 export default function UploadPage() {
@@ -31,6 +44,7 @@ export default function UploadPage() {
   const [maxDownloads, setMaxDownloads] = useState<number | null>(null)
   const [password, setPassword]         = useState('')
   const [usePassword, setUsePassword]   = useState(false)
+  const [showQr, setShowQr] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const onDrop = useCallback((e: React.DragEvent) => {
@@ -47,26 +61,44 @@ export default function UploadPage() {
   const removeFile = (i: number) => setFiles(prev => prev.filter((_, idx) => idx !== i))
 
   const handleUpload = async () => {
-    if (!isAuthenticated) { router.push('/login'); return }
+    if (!isAuthenticated) { router.push('/'); return }
     if (files.length === 0) { toast.error('Please select at least one file'); return }
+    if (files.some(file => file.size > MAX_TRANSFER_BYTES)) {
+      toast.error('Each file must be 4 MB or smaller on the current upload route')
+      return
+    }
+    if (usePassword && password.trim().length < 8) {
+      toast.error('Use at least 8 characters for a protected share')
+      return
+    }
+    if (!user?.email) {
+      toast.error('Your account is missing an email address. Please sign in again.')
+      return
+    }
 
     setUploading(true)
     setProgress(0)
 
     try {
-      const token = Math.random().toString(36).substring(2, 9).toUpperCase()
+      const token = createShareCode()
       const expiresAt = new Date(Date.now() + expiryHours * 3600000).toISOString()
-      const uploadedUrls: string[] = []
+      const passwordHash = usePassword ? await hashPassword(password) : ''
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         setProgress(Math.round(((i + 0.5) / files.length) * 80))
 
-              // Upload file through API (avoids CORS)
+        // The authenticated server route uploads to Bunny and creates the
+        // database row as one operation, preventing orphaned/dead share links.
         const formData = new FormData()
         formData.append('file', file)
         formData.append('fileName', file.name)
         formData.append('fileType', file.type || 'application/octet-stream')
+        formData.append('shareToken', token)
+        formData.append('expiresAt', expiresAt)
+        formData.append('expiryHours', String(expiryHours))
+        formData.append('maxDownloads', maxDownloads === null ? '' : String(maxDownloads))
+        formData.append('passwordHash', passwordHash)
 
         const uploadRes = await fetch('/api/get-bunny-upload-url', {
           method: 'POST',
@@ -78,27 +110,9 @@ export default function UploadPage() {
           throw new Error(err.error || 'Upload failed')
         }
 
-        const { fileUrl, bunnyPath, fileName: savedName, fileSize } = await uploadRes.json()
-        uploadedUrls.push(fileUrl)
+        await uploadRes.json()
 
         setProgress(Math.round(((i + 1) / files.length) * 80))
-
-        // Save to Supabase
-        const { createClient } = await import('@/lib/supabase/client')
-        const supabase = createClient()
-        await supabase.from('shared_files').insert({
-          file_name:      file.name,
-          file_type:      file.type,
-          file_url:       fileUrl,
-          file_size:      file.size,
-          share_token:    token,
-          sender_email:   user?.email,
-          expires_at:     expiresAt,
-          expiry_hours:   expiryHours,
-          max_downloads:  maxDownloads,
-          status:         'active',
-          share_method:   'link',
-        })
       }
 
       setProgress(100)
@@ -108,15 +122,32 @@ export default function UploadPage() {
       toast.success('File uploaded successfully!')
     } catch (err) {
       console.error(err)
-      toast.error('Upload failed. Please try again.')
+      toast.error(err instanceof Error ? err.message : 'Upload failed. Please try again.')
     } finally {
       setUploading(false)
     }
   }
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(shareLink)
-    toast.success('Link copied!')
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      toast.success('Link copied!')
+    } catch {
+      toast.error('Could not copy the link. Please copy it manually.')
+    }
+  }
+
+  const shareLinkWithDevice = async () => {
+    if (!navigator.share) {
+      await copyLink()
+      return
+    }
+
+    try {
+      await navigator.share({ title: 'BoltShare file', url: shareLink })
+    } catch {
+      // Closing the native share sheet is not an app error.
+    }
   }
 
   // ── Link Created screen ───────────────────
@@ -148,8 +179,8 @@ export default function UploadPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '1.25rem' }}>
           {[
             { icon: Copy,   label: 'Copy Link',   action: copyLink },
-            { icon: Share2, label: 'Share Link',  action: () => navigator.share?.({ url: shareLink }) },
-            { icon: QrCode, label: 'QR Code',     action: () => toast('QR coming soon') },
+            { icon: Share2, label: 'Share Link',  action: shareLinkWithDevice },
+            { icon: QrCode, label: 'QR Code',     action: () => setShowQr(value => !value) },
           ].map(({ icon: Icon, label, action }) => (
             <button key={label} onClick={action} style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '0.875rem 0.5rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
               <Icon size={20} color="#F5C518" />
@@ -157,6 +188,12 @@ export default function UploadPage() {
             </button>
           ))}
         </div>
+
+        {showQr && (
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '1rem', width: 'fit-content', margin: '0 auto 1.25rem' }}>
+            <QRCodeSVG value={shareLink} size={196} level="M" />
+          </div>
+        )}
 
         {/* Link settings summary */}
         <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
@@ -199,9 +236,9 @@ export default function UploadPage() {
       {/* Trust badges */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         {[
-          { icon: Shield, label: 'Encrypted',    color: '#1D9E75' },
+          { icon: Shield, label: 'Secure links', color: '#1D9E75' },
           { icon: Zap,    label: 'Bunny CDN',    color: '#F5C518' },
-          { icon: CheckCircle, label: 'Virus Scanned', color: '#60A5FA' },
+          { icon: CheckCircle, label: 'Auto-expiring', color: '#60A5FA' },
         ].map(({ icon: Icon, label, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '4px 10px' }}>
             <Icon size={12} color={color} />
@@ -233,7 +270,7 @@ export default function UploadPage() {
           Drag &amp; drop files here
         </p>
         <p style={{ color: '#8A8A8A', fontSize: '0.8rem', marginBottom: '4px' }}>or click to browse</p>
-        <p style={{ color: '#555', fontSize: '0.75rem' }}>Multiple files allowed · Max 5GB</p>
+        <p style={{ color: '#555', fontSize: '0.75rem' }}>Multiple files allowed · 4 MB per file</p>
         <input ref={inputRef} type="file" multiple onChange={onPick} style={{ display: 'none' }} />
       </div>
 

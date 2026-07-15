@@ -3,42 +3,31 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Zap, ArrowRight, QrCode, Shield, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 
 export default function ReceiveCodePage() {
   const [code, setCode]       = useState('')
   const [loading, setLoading] = useState(false)
   const router                = useRouter()
-  const supabase              = createClient()
 
   async function handleContinue() {
     const token = code.trim().toUpperCase()
     if (!token) { toast.error('Please enter a code'); return }
 
     setLoading(true)
-    const { data, error } = await supabase
-      .from('shared_files')
-      .select('id, status, expires_at')
-      .eq('share_token', token)
-      .limit(1)
-      .maybeSingle()
-
-    setLoading(false)
-
-    if (error || !data) {
-      toast.error('Code not found. Check and try again.')
-      return
+    try {
+      const response = await fetch(`/api/share/${encodeURIComponent(token)}`, { cache: 'no-store' })
+      const payload = await response.json()
+      if (!response.ok || !payload.files?.length) {
+        toast.error(payload.error || 'Code not found. Check and try again.')
+        return
+      }
+      router.push(`/receive/${token}`)
+    } catch {
+      toast.error('The share service is temporarily unavailable. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    if (data.status !== 'active') {
-      toast.error('This file has been removed.')
-      return
-    }
-    if (new Date(data.expires_at) < new Date()) {
-      toast.error('This link has expired.')
-      return
-    }
-    router.push(`/receive/${token}`)
   }
 
   return (
@@ -145,7 +134,7 @@ export default function ReceiveCodePage() {
 
         {/* App link */}
         <p style={{ textAlign: 'center', color: '#555', fontSize: '0.75rem', marginTop: '1.25rem' }}>
-          Don't have the app yet?{' '}
+          Don&apos;t have the app yet?{' '}
           <a href="https://boltshare.rcinc.app" style={{ color: '#F5C518', textDecoration: 'none' }}>
             boltshare.rcinc.app
           </a>

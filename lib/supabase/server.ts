@@ -1,6 +1,7 @@
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { getSupabasePublicConfig, getSupabaseServiceRoleKey } from '@/lib/config'
 
 /**
  * Creates a user-scoped Supabase client for Route Handlers and Server Components.
@@ -8,10 +9,11 @@ import { cookies } from 'next/headers'
  */
 export async function createServerClient() {
   const cookieStore = await cookies()
+  const { url, anonKey } = getSupabasePublicConfig()
 
   return createSupabaseServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {
@@ -33,9 +35,10 @@ export async function createServerClient() {
 }
 
 export function createAdminClient() {
+  const { url } = getSupabasePublicConfig()
   return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    url,
+    getSupabaseServiceRoleKey(),
     {
       auth: {
         autoRefreshToken: false,

@@ -43,7 +43,7 @@ const STEPS = [
     subtitle: 'Three simple steps to share any file securely.',
     illustration: null,
     features: [
-      { num: '1', icon: <Upload size={18} color="#F5C518" />, title: 'Upload', desc: 'Drag & drop or select any file up to 5GB' },
+      { num: '1', icon: <Upload size={18} color="#F5C518" />, title: 'Upload', desc: 'Drag & drop or select files up to 4 MB each' },
       { num: '2', icon: <Zap size={18} color="#60A5FA" />,    title: 'Share',  desc: 'Get a link, QR code, or send via email' },
       { num: '3', icon: <Clock size={18} color="#1D9E75" />,  title: 'Expire', desc: 'Files auto-delete in 1h, 6h, 24h, or 7 days' },
     ],
@@ -58,7 +58,7 @@ const STEPS = [
       { icon: <Lock size={16} color="#F5C518" />,     title: 'Password Protected', desc: 'Optional secure access' },
       { icon: <Clock size={16} color="#60A5FA" />,    title: 'Auto-Delete',        desc: 'Time-based expiry' },
       { icon: <BarChart2 size={16} color="#1D9E75" />, title: 'Analytics',         desc: 'Track every download' },
-      { icon: <Shield size={16} color="#8B5CF6" />,   title: 'AES-256 Encrypted', desc: 'End-to-end security' },
+      { icon: <Shield size={16} color="#8B5CF6" />,   title: 'Private Links', desc: 'Optional password protection' },
     ],
   },
 ]
@@ -85,11 +85,11 @@ export default function OnboardingPage() {
     if (typeof window !== 'undefined') {
       const seen = localStorage.getItem('bs_onboarded')
       if (seen && !isLoadingAuth && !isAuthenticated) {
-        setShowLogin(true)
+        queueMicrotask(() => setShowLogin(true))
       }
 
       if (new URLSearchParams(window.location.search).has('auth_error')) {
-        setShowLogin(true)
+        queueMicrotask(() => setShowLogin(true))
         toast.error('That sign-in link is invalid or has expired. Please request a new one.')
         window.history.replaceState({}, '', window.location.pathname)
       }
@@ -124,7 +124,9 @@ export default function OnboardingPage() {
       })
 
       if (error) {
-        toast.error(error.message)
+        toast.error(error.message.includes('fetch')
+          ? 'Sign-in is temporarily unavailable. Please try again shortly.'
+          : error.message)
         return
       }
 
@@ -132,7 +134,7 @@ export default function OnboardingPage() {
       setSent(true)
       localStorage.setItem('bs_onboarded', '1')
     } catch {
-      toast.error('We could not send the sign-in email. Please check your connection and try again.')
+      toast.error('Sign-in is temporarily unavailable. Please try again shortly.')
     } finally {
       setSending(false)
     }
@@ -164,7 +166,7 @@ export default function OnboardingPage() {
             <>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '6px' }}>Sign in to BoltShare</h2>
               <p style={{ color: '#8A8A8A', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                Enter your email — we'll send you a magic link. No password needed.
+                Enter your email — we&apos;ll send you a magic link. No password needed.
               </p>
 
               <div style={{ position: 'relative', marginBottom: '1rem' }}>

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
-import { createClient } from '@/lib/supabase/client'
 import {
   Moon, Globe, Clock, Download, HelpCircle,
   Mail, Info, LogOut, Trash2, ChevronRight,
@@ -161,7 +160,6 @@ const expiryOptions = [
 export default function SettingsPage() {
   const { user, isAuthenticated, logout } = useAuth()
   const router  = useRouter()
-  const supabase = createClient()
 
   const [lang, setLang]               = useState('en')
   const [showLangPicker, setShowLangPicker] = useState(false)
@@ -184,39 +182,16 @@ export default function SettingsPage() {
     if (deleteText !== 'DELETE') return
     setDeleting(true)
     try {
-      // Delete all user's files from Supabase
-      if (user?.email) {
-        const { data: files } = await supabase
-          .from('shared_files')
-          .select('id, bunny_path')
-          .eq('sender_email', user.email)
-
-        // Delete each file from Bunny
-        for (const file of files || []) {
-          if (file.bunny_path) {
-            await fetch('/api/delete-from-bunny', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ bunnyPath: file.bunny_path }),
-            })
-          }
-        }
-
-        // Delete all records from Supabase
-        await supabase.from('shared_files').delete().eq('sender_email', user.email)
-        await supabase.from('org_members').delete().eq('user_email', user.email)
-        await supabase.from('download_logs').delete().eq('receiver_email', user.email)
-      }
-
-      // Delete the Supabase auth user
-      await fetch('/api/delete-account', { method: 'POST' })
+      const response = await fetch('/api/delete-account', { method: 'POST' })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'Account deletion failed')
 
       await logout()
       toast.success('Account deleted successfully')
     router.push('/')
     } catch (err) {
       console.error(err)
-      toast.error('Failed to delete account. Please try again.')
+      toast.error(err instanceof Error ? err.message : 'Failed to delete account. Please try again.')
       setDeleting(false)
     }
   }

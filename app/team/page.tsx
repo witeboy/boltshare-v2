@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import type { LucideIcon } from 'lucide-react'
 
 const roleColors: Record<string, string> = {
   owner:  '#F5C518',
@@ -18,10 +19,24 @@ const roleColors: Record<string, string> = {
   member: '#8A8A8A',
 }
 
-const roleIcons: Record<string, any> = {
+const roleIcons: Record<string, LucideIcon> = {
   owner:  Crown,
   admin:  Shield,
   member: Users,
+}
+
+interface Organization {
+  id: string
+  name: string
+}
+
+interface OrganizationMember {
+  id: string
+  user_email: string
+  role: string
+  status: string
+  organization_id?: string
+  organizations?: Organization
 }
 
 export default function TeamPage() {
@@ -29,51 +44,49 @@ export default function TeamPage() {
   const router   = useRouter()
   const supabase = createClient()
 
-  const [org, setOrg]           = useState<any>(null)
-  const [members, setMembers]   = useState<any[]>([])
+  const [org, setOrg]           = useState<Organization | null>(null)
+  const [members, setMembers]   = useState<OrganizationMember[]>([])
   const [myRole, setMyRole]     = useState<string>('member')
   const [loading, setLoading]   = useState(true)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
   const [removing, setRemoving] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) router.push('/')
-  }, [isAuthenticated, isLoadingAuth])
-
-  useEffect(() => {
-    if (!user) return
-    loadTeam()
-  }, [user])
-
   async function loadTeam() {
     setLoading(true)
     try {
+      const userEmail = user?.email?.toLowerCase()
+      if (!userEmail) throw new Error('Your account is missing an email address')
+
       // Find my org membership
       const { data: myMembership } = await supabase
         .from('org_members')
         .select('*, organizations(*)')
-        .eq('user_email', user!.email)
+        .eq('user_email', userEmail)
         .single()
 
       if (!myMembership) {
         // No org — create one automatically
         const { data: newOrg } = await supabase
           .from('organizations')
-          .insert({ name: user!.email?.split('@')[0] + "'s Team" })
+          .insert({
+            name: userEmail.split('@')[0] + "'s Team",
+            created_by_email: userEmail,
+          })
           .select()
           .single()
 
         if (newOrg) {
-          await supabase.from('org_members').insert({
+          const { data: ownerMember, error: ownerError } = await supabase.from('org_members').insert({
             organization_id: newOrg.id,
-            user_email: user!.email,
+            user_email: userEmail,
             role: 'owner',
             status: 'active',
-          })
+          }).select().single()
+          if (ownerError || !ownerMember) throw ownerError || new Error('Team owner could not be created')
           setOrg(newOrg)
           setMyRole('owner')
-          setMembers([{ user_email: user!.email, role: 'owner', status: 'active' }])
+          setMembers([ownerMember])
         }
         setLoading(false)
         return
@@ -96,6 +109,16 @@ export default function TeamPage() {
     setLoading(false)
   }
 
+  useEffect(() => {
+    if (!isLoadingAuth && !isAuthenticated) router.push('/')
+  }, [isAuthenticated, isLoadingAuth, router])
+
+  useEffect(() => {
+    if (!user) return
+    queueMicrotask(() => loadTeam())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
   async function handleInvite() {
     if (!inviteEmail.trim() || !org) return
     if (!inviteEmail.includes('@')) { toast.error('Enter a valid email'); return }
@@ -112,26 +135,36 @@ export default function TeamPage() {
 
       if (existing) { toast.error('Already a member'); setInviting(false); return }
 
-      await supabase.from('org_members').insert({
+      const { error: inviteError } = await supabase.from('org_members').insert({
         organization_id: org.id,
         user_email:      inviteEmail.trim().toLowerCase(),
         role:            'member',
         status:          'invited',
       })
+      if (inviteError) throw inviteError
 
       // Send invite email
-      await fetch('/api/send-email', {
+      const emailResponse = await fetch('/api/send-email', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to:      inviteEmail.trim(),
           subject: `You've been invited to ${org.name} on BoltShare`,
           fileName: null,
-          shareLink: `${window.location.origin}/login`,
+          shareLink: window.location.origin,
           shareCode: null,
           senderEmail: user!.email,
         }),
       })
+      if (!emailResponse.ok) {
+        await supabase
+          .from('org_members')
+          .delete()
+          .eq('organization_id', org.id)
+          .eq('user_email', inviteEmail.trim().toLowerCase())
+        const body = await emailResponse.json().catch(() => null)
+        throw new Error(body?.error || 'Invite email failed')
+      }
 
       toast.success(`Invite sent to ${inviteEmail}`)
       setInviteEmail('')
