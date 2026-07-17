@@ -1,22 +1,34 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import {
   Zap, Bell, Menu, Upload, Download, FileText,
-  Image, Film, Archive, ArrowRight, Home,
-  ArrowLeftRight, Users, Settings, ChevronRight
+  Image as ImageIcon, Film, Archive, ArrowRight, Home,
+  ArrowLeftRight, Users, Settings
 } from 'lucide-react'
 import Link from 'next/link'
 
 function fileIcon(type: string) {
-  if (type?.includes('image')) return <Image size={18} color="#F5C518" />
+  if (type?.includes('image')) return <ImageIcon size={18} color="#F5C518" />
   if (type?.includes('video')) return <Film size={18} color="#8B5CF6" />
   if (type?.includes('pdf'))   return <FileText size={18} color="#E24B4A" />
   if (type?.includes('zip') || type?.includes('archive')) return <Archive size={18} color="#F5A623" />
   return <FileText size={18} color="#60A5FA" />
+}
+
+interface SharedFile {
+  id: string
+  file_name: string
+  file_type: string
+  file_size: number | null
+  share_method: string
+  status: string
+  expires_at: string
+  download_count: number | null
+  created_at: string
 }
 
 function timeAgo(dateStr: string) {
@@ -30,11 +42,11 @@ function timeAgo(dateStr: string) {
 }
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, isLoadingAuth, logout } = useAuth()
+  const { user, isAuthenticated, isLoadingAuth } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
-  const [files, setFiles]       = useState<any[]>([])
+  const [files, setFiles]       = useState<SharedFile[]>([])
   const [stats, setStats]       = useState({ total: 0, active: 0, downloads: 0 })
   const [loading, setLoading]   = useState(true)
 
@@ -42,7 +54,7 @@ export default function DashboardPage() {
     if (!isLoadingAuth && !isAuthenticated) {
       router.push('/')
     }
-  }, [isAuthenticated, isLoadingAuth])
+  }, [isAuthenticated, isLoadingAuth, router])
 
   useEffect(() => {
     if (!user) return
@@ -55,15 +67,16 @@ export default function DashboardPage() {
         .limit(50)
 
       if (data) {
-        setFiles(data.slice(0, 5))
-        const active = data.filter((f: any) => f.status === 'active' && new Date(f.expires_at) > new Date()).length
-        const downloads = data.reduce((total: number, f: any) => total + (f.download_count || 0), 0)
-        setStats({ total: data.length, active, downloads })
+        const sharedFiles = data as SharedFile[]
+        setFiles(sharedFiles.slice(0, 5))
+        const active = sharedFiles.filter((file) => file.status === 'active' && new Date(file.expires_at) > new Date()).length
+        const downloads = sharedFiles.reduce((total, file) => total + (file.download_count || 0), 0)
+        setStats({ total: sharedFiles.length, active, downloads })
       }
       setLoading(false)
     }
     load()
-  }, [user])
+  }, [user, supabase])
 
   if (isLoadingAuth || !isAuthenticated) {
     return (
@@ -106,7 +119,7 @@ export default function DashboardPage() {
             Welcome,<br />{firstName}
           </h1>
           <p style={{ color: '#8A8A8A', fontSize: '0.875rem', marginTop: '6px' }}>
-            Let's transfer files securely ⚡
+            Let&apos;s transfer files securely ⚡
           </p>
         </div>
 
