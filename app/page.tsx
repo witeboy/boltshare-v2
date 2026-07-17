@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
 import { createClient } from '@/lib/supabase/client'
-import { AUTH_CALLBACK_URL } from '@/lib/config'
 import {
   ArrowRight,
   Zap,
@@ -94,14 +93,6 @@ export default function OnboardingPage() {
       queueMicrotask(() => setShowLogin(true))
     }
 
-    const params = new URLSearchParams(window.location.search)
-    if (params.has('auth_error')) {
-      queueMicrotask(() => setShowLogin(true))
-      toast.error('That sign-in link is invalid or has expired. Please request a new one.')
-      params.delete('auth_error')
-      const query = params.toString()
-      window.history.replaceState({}, '', query ? `${window.location.pathname}?${query}` : window.location.pathname)
-    }
   }, [isLoadingAuth, isAuthenticated])
 
   const goNext = () => {
@@ -131,7 +122,6 @@ export default function OnboardingPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
         options: {
-          emailRedirectTo: AUTH_CALLBACK_URL,
           shouldCreateUser: true,
         },
       })
@@ -219,7 +209,7 @@ export default function OnboardingPage() {
               <>
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '6px' }}>Sign in to BoltShare</h2>
                 <p style={{ color: '#8A8A8A', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                  Enter your email. We&apos;ll send a sign-in link and a six-digit code.
+                  Enter your email. We&apos;ll send a six-digit sign-in code.
                 </p>
 
                 <div style={{ position: 'relative', marginBottom: '1rem' }}>
@@ -253,7 +243,7 @@ export default function OnboardingPage() {
                   {sending ? (
                     <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Sending...</>
                   ) : (
-                    <>Send Sign-In Email <ArrowRight size={18} /></>
+                    <>Send Sign-In Code <ArrowRight size={18} /></>
                   )}
                 </button>
               </>
@@ -264,7 +254,7 @@ export default function OnboardingPage() {
                 </div>
                 <h3 style={{ color: '#fff', fontWeight: 600, marginBottom: '8px' }}>Check your email</h3>
                 <p style={{ color: '#8A8A8A', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                  Open the sign-in link, or enter the six-digit code sent to <strong style={{ color: '#fff' }}>{email}</strong>.
+                  Enter the six-digit code sent to <strong style={{ color: '#fff' }}>{email}</strong>.
                 </p>
 
                 <div style={{ position: 'relative', marginTop: '1.25rem' }}>
@@ -304,7 +294,7 @@ export default function OnboardingPage() {
 
                 <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
                   <button type="button" onClick={() => void handleLogin()} disabled={sending} style={{ background: 'transparent', border: 'none', color: '#F5C518', fontSize: '0.8rem', cursor: sending ? 'not-allowed' : 'pointer', textDecoration: 'underline' }}>
-                    Resend email
+                    Resend code
                   </button>
                   <button type="button" onClick={() => { setSent(false); setOtp('') }} style={{ background: 'transparent', border: 'none', color: '#8A8A8A', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}>
                     Change email
