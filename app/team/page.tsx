@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Building2, Users, Mail, Crown, Shield,
   UserMinus, Plus, Home, ArrowLeftRight,
-  Settings, Loader2, ChevronRight
+  Settings, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -169,7 +169,7 @@ export default function TeamPage() {
       toast.success(`Invite sent to ${inviteEmail}`)
       setInviteEmail('')
       loadTeam()
-    } catch (err) {
+    } catch {
       toast.error('Failed to send invite')
     }
     setInviting(false)
