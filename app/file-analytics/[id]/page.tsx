@@ -1,38 +1,28 @@
 'use client'
 
-import { use, useEffect, useState, useMemo } from 'react'
+import { use, useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/AuthContext'
-import { createClient } from '@/lib/supabase/client'
 import {
-  ArrowLeft, Download, BarChart2, FileText, Image as ImageIcon,
-  Film, Archive, Copy, Trash2, Loader2
+  Activity,
+  Archive,
+  ArrowLeft,
+  CalendarClock,
+  Check,
+  Copy,
+  Download,
+  FileText,
+  Film,
+  Image as ImageIcon,
+  Loader2,
+  MoreHorizontal,
+  Share2,
+  Trash2,
+  Users,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-function fileIcon(type: string, size = 20) {
-  if (type?.includes('image')) return <ImageIcon size={size} color="#F5C518" />
-  if (type?.includes('video')) return <Film size={size} color="#8B5CF6" />
-  if (type?.includes('pdf'))   return <FileText size={size} color="#E24B4A" />
-  if (type?.includes('zip'))   return <Archive size={size} color="#F5A623" />
-  return <FileText size={size} color="#60A5FA" />
-}
-
-function formatBytes(bytes: number) {
-  if (!bytes) return '—'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-}
-
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 1)  return 'just now'
-  if (m < 60) return m + 'm ago'
-  const h = Math.floor(m / 60)
-  if (h < 24) return h + 'h ago'
-  return Math.floor(h / 24) + 'd ago'
-}
+import { useAuth } from '@/lib/AuthContext'
+import { createClient } from '@/lib/supabase/client'
+import { APP_URL } from '@/lib/config'
 
 interface SharedFile {
   id: string
@@ -40,9 +30,13 @@ interface SharedFile {
   file_type: string
   file_size: number
   share_token: string
+  sender_email: string
   download_count: number
   max_downloads: number | null
+  password_hash: string | null
+  status: string
   expires_at: string
+  created_at: string
 }
 
 interface DownloadLog {
@@ -52,26 +46,77 @@ interface DownloadLog {
   receiver_email: string | null
 }
 
-// Simple bar chart — no external library needed
-function MiniBarChart({ data }: { data: { day: string; downloads: number }[] }) {
-  const max = Math.max(...data.map(d => d.downloads), 1)
+function formatBytes(bytes: number) {
+  if (!bytes) return '0 MB'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+}
+
+function timeAgo(dateString: string) {
+  const difference = Date.now() - new Date(dateString).getTime()
+  const minutes = Math.floor(difference / 60000)
+
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+
+  return `${Math.floor(hours / 24)}d ago`
+}
+
+function formatDate(dateString: string) {
+  return new Intl.DateTimeFormat('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(dateString))
+}
+
+function FileTypeIcon({ type, size = 20 }: { type: string; size?: number }) {
+  if (type?.includes('image')) return <ImageIcon size={size} color="#ffc916" />
+  if (type?.includes('video')) return <Film size={size} color="#9d84ff" />
+  if (type?.includes('pdf')) return <FileText size={size} color="#ff6868" />
+  if (type?.includes('zip') || type?.includes('archive')) return <Archive size={size} color="#ffb638" />
+  return <FileText size={size} color="#75a7ff" />
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  const width = 120
+  const height = 38
+  const maximum = Math.max(...values, 1)
+  const denominator = Math.max(values.length - 1, 1)
+  const points = values
+    .map((value, index) => {
+      const x = (index / denominator) * width
+      const y = height - 3 - (value / maximum) * (height - 8)
+      return `${x},${y}`
+    })
+    .join(' ')
+
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '80px', padding: '0 4px' }}>
-      {data.map((d, i) => (
-        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
-          <div
-            style={{
-              width: '100%',
-              background: d.downloads > 0 ? '#F5C518' : '#242424',
-              borderRadius: '3px 3px 0 0',
-              height: `${Math.max((d.downloads / max) * 100, d.downloads > 0 ? 8 : 4)}%`,
-              transition: 'height 0.3s',
-              opacity: d.downloads > 0 ? 1 : 0.4,
-            }}
-          />
-          <span style={{ fontSize: '9px', color: '#555', whiteSpace: 'nowrap' }}>{d.day}</span>
-        </div>
-      ))}
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="38" role="img" aria-label="Seven day activity trend">
+      <polyline
+        points={points}
+        fill="none"
+        stroke="#ffc916"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  )
+}
+
+function LoadingScreen() {
+  return (
+    <div className="premium-page" style={{ display: 'grid', placeItems: 'center' }}>
+      <div className="premium-spinner" aria-label="Loading file details" />
     </div>
   )
 }
@@ -79,60 +124,164 @@ function MiniBarChart({ data }: { data: { day: string; downloads: number }[] }) 
 export default function FileAnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { user, isAuthenticated, isLoadingAuth } = useAuth()
-  const router   = useRouter()
-  const supabase = createClient()
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
 
-  const [file, setFile]     = useState<SharedFile | null>(null)
-  const [logs, setLogs]     = useState<DownloadLog[]>([])
+  const [file, setFile] = useState<SharedFile | null>(null)
+  const [logs, setLogs] = useState<DownloadLog[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [fileActive, setFileActive] = useState(false)
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true)
-    const [{ data: fileData }, { data: logData }] = await Promise.all([
-      supabase.from('shared_files').select('*').eq('id', id).single(),
-      supabase.from('download_logs').select('*').eq('file_id', id).order('downloaded_at', { ascending: false }).limit(100),
+
+    const [{ data: fileData, error: fileError }, { data: logData, error: logError }] = await Promise.all([
+      supabase
+        .from('shared_files')
+        .select('id,file_name,file_type,file_size,share_token,sender_email,download_count,max_downloads,password_hash,status,expires_at,created_at')
+        .eq('id', id)
+        .single(),
+      supabase
+        .from('download_logs')
+        .select('id,downloaded_at,ip_address,receiver_email')
+        .eq('file_id', id)
+        .order('downloaded_at', { ascending: false })
+        .limit(100),
     ])
-    setFile(fileData)
-    setLogs(logData || [])
+
+    if (fileError) {
+      console.error('Unable to load shared file:', fileError)
+      setFile(null)
+    } else {
+      const loadedFile = fileData as SharedFile
+      setFile(loadedFile)
+      setFileActive(
+        loadedFile.status === 'active' &&
+          new Date(loadedFile.expires_at).getTime() > Date.now(),
+      )
+    }
+
+    if (logError) {
+      console.error('Unable to load download activity:', logError)
+      setLogs([])
+    } else {
+      setLogs((logData ?? []) as DownloadLog[])
+    }
+
     setLoading(false)
-  }
+  }, [id, supabase])
 
   useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) router.push('/')
+    if (!isLoadingAuth && !isAuthenticated) {
+      router.replace('/')
+    }
   }, [isAuthenticated, isLoadingAuth, router])
 
   useEffect(() => {
     if (!user || !id) return
-    queueMicrotask(() => loadData())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, id])
+    queueMicrotask(() => {
+      void loadData()
+    })
+  }, [id, loadData, user])
 
-  // Build last 7 days chart
-  const chartData = useMemo(() => {
-    const days = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      const dayStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      const count = logs.filter(log => {
-        const logDate = new Date(log.downloaded_at)
-        return logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === dayStr
+  const activityByDay = useMemo(() => {
+    return Array.from({ length: 7 }, (_, offset) => {
+      const date = new Date()
+      date.setHours(0, 0, 0, 0)
+      date.setDate(date.getDate() - (6 - offset))
+
+      const nextDay = new Date(date)
+      nextDay.setDate(nextDay.getDate() + 1)
+
+      return logs.filter((log) => {
+        const downloadedAt = new Date(log.downloaded_at)
+        return downloadedAt >= date && downloadedAt < nextDay
       }).length
-      days.push({ day: d.toLocaleDateString('en-US', { weekday: 'short' }), downloads: count })
-    }
-    return days
+    })
   }, [logs])
+
+  const uniqueRecipients = useMemo(() => {
+    const identities = logs.map((log) => log.receiver_email || log.ip_address).filter(Boolean)
+    return new Set(identities).size
+  }, [logs])
+
+  const uniqueRecipientsByDay = useMemo(() => {
+    return Array.from({ length: 7 }, (_, offset) => {
+      const date = new Date()
+      date.setHours(0, 0, 0, 0)
+      date.setDate(date.getDate() - (6 - offset))
+
+      const nextDay = new Date(date)
+      nextDay.setDate(nextDay.getDate() + 1)
+
+      const identities = logs
+        .filter((log) => {
+          const downloadedAt = new Date(log.downloaded_at)
+          return downloadedAt >= date && downloadedAt < nextDay
+        })
+        .map((log) => log.receiver_email || log.ip_address)
+        .filter(Boolean)
+
+      return new Set(identities).size
+    })
+  }, [logs])
+
+  const secureLink = file
+    ? `${APP_URL.replace(/\/$/, '')}/receive/${file.share_token}`
+    : ''
+
+  const isActive = fileActive
 
   async function copyLink() {
     if (!file) return
-    navigator.clipboard.writeText(`${window.location.origin}/receive/${file.share_token}`)
-    toast.success('Link copied!')
+
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/receive/${file.share_token}`)
+      setCopied(true)
+      toast.success('Secure link copied')
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch (error) {
+      console.error('Unable to copy secure link:', error)
+      toast.error('The link could not be copied')
+    }
+  }
+
+  async function shareLink() {
+    if (!file) return
+
+    const url = `${window.location.origin}/receive/${file.share_token}`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: file.file_name,
+          text: 'A secure BoltShare file was shared with you.',
+          url,
+        })
+        return
+      }
+
+      await navigator.clipboard.writeText(url)
+      toast.success('Secure link copied for sharing')
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return
+      console.error('Unable to share secure link:', error)
+      toast.error('The link could not be shared')
+    }
   }
 
   async function deleteFile() {
-    if (!file) return
+    if (!file || deleting) return
+
+    const confirmed = window.confirm(`Delete “${file.file_name}”? This cannot be undone.`)
+    if (!confirmed) return
+
     setDeleting(true)
+    setMenuOpen(false)
+
     try {
       const response = await fetch('/api/delete-from-bunny', {
         method: 'POST',
@@ -140,7 +289,11 @@ export default function FileAnalyticsPage({ params }: { params: Promise<{ id: st
         body: JSON.stringify({ fileId: file.id }),
       })
       const payload = await response.json()
-      if (!response.ok) throw new Error(payload.error || 'Delete failed')
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Delete failed')
+      }
+
       toast.success('File deleted')
       router.push('/history')
     } catch (error) {
@@ -149,108 +302,185 @@ export default function FileAnalyticsPage({ params }: { params: Promise<{ id: st
     }
   }
 
-  const isExpired = file && new Date(file.expires_at) < new Date()
+  if (isLoadingAuth || !isAuthenticated || loading) {
+    return <LoadingScreen />
+  }
 
-  if (isLoadingAuth || !isAuthenticated || loading) return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #F5C518', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  )
-
-  if (!file) return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#555' }}>File not found.</p>
-    </div>
-  )
+  if (!file) {
+    return (
+      <main className="premium-page">
+        <div className="premium-shell" style={{ display: 'grid', placeItems: 'center', textAlign: 'center' }}>
+          <div>
+            <FileText size={34} color="#656a70" style={{ margin: '0 auto' }} />
+            <h1 style={{ marginTop: '1rem', fontSize: '1.35rem' }}>File not found</h1>
+            <button type="button" className="premium-secondary-button" onClick={() => router.push('/history')} style={{ marginTop: '1rem', minWidth: 190 }}>
+              Back to transfers
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', paddingBottom: '2rem' }}>
+    <main className="premium-page">
+      <div className="premium-dashboard-shell premium-enter" style={{ paddingBottom: '2.2rem' }}>
+        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button type="button" className="premium-icon-button" onClick={() => router.back()} aria-label="Go back">
+            <ArrowLeft size={20} />
+          </button>
 
-      {/* Header */}
-      <div style={{ padding: '1.25rem 1.25rem 0.75rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: '#8A8A8A', cursor: 'pointer' }}>
-          <ArrowLeft size={20} />
-        </button>
-        <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.15rem' }}>File Analytics</h2>
-      </div>
+          <div style={{ position: 'relative' }}>
+            <button type="button" className="premium-icon-button" onClick={() => setMenuOpen((current) => !current)} aria-label="Open file actions">
+              <MoreHorizontal size={21} />
+            </button>
 
-      <div style={{ padding: '0 1.25rem' }}>
-
-        {/* File card */}
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '1rem', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-            <div style={{ width: '46px', height: '46px', borderRadius: '12px', background: '#242424', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {fileIcon(file.file_type)}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.file_name}</div>
-              <div style={{ fontSize: '0.75rem', color: '#8A8A8A', marginTop: '2px' }}>{formatBytes(file.file_size)}</div>
-            </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {!isExpired && (
-                <button onClick={copyLink} style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#242424', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Copy size={14} color="#8A8A8A" />
+            {menuOpen && (
+              <div className="premium-action-menu">
+                <button type="button" onClick={() => void deleteFile()} disabled={deleting}>
+                  {deleting ? <Loader2 size={15} style={{ animation: 'premium-spin 800ms linear infinite' }} /> : <Trash2 size={15} />}
+                  Delete file
                 </button>
-              )}
-              <button onClick={deleteFile} disabled={deleting} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(226,75,74,0.1)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {deleting ? <Loader2 size={14} color="#E24B4A" style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={14} color="#E24B4A" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Meta */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            {[
-              { label: 'Status',    value: isExpired ? 'Expired' : 'Active', color: isExpired ? '#E24B4A' : '#1D9E75' },
-              { label: 'Downloads', value: file.download_count || 0 },
-              { label: 'Expires',   value: new Date(file.expires_at).toLocaleDateString() },
-              { label: 'Max DL',    value: file.max_downloads || 'Unlimited' },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: '#242424', borderRadius: '10px', padding: '10px 12px' }}>
-                <div style={{ fontSize: '0.7rem', color: '#555', marginBottom: '4px' }}>{label}</div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: (color as string) || '#fff' }}>{value}</div>
               </div>
-            ))}
+            )}
           </div>
-        </div>
+        </header>
 
-        {/* Downloads chart */}
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '1rem', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-            <BarChart2 size={15} color="#F5C518" />
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff' }}>Downloads — last 7 days</span>
-          </div>
-          <MiniBarChart data={chartData} />
-        </div>
-
-        {/* Download log */}
-        {logs.length > 0 && (
-          <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflow: 'hidden' }}>
-            <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: '#fff', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
-              Download History
+        <section style={{ marginTop: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="premium-file-icon" style={{ width: 48, height: 48, borderRadius: 12 }}>
+              <FileTypeIcon type={file.file_type} size={22} />
             </div>
-            {logs.slice(0, 20).map((log, i) => (
-              <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0.75rem 1rem', borderBottom: i < Math.min(logs.length, 20) - 1 ? '0.5px solid rgba(255,255,255,0.06)' : 'none' }}>
-                <Download size={14} color="#555" style={{ flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.8rem', color: '#B0B0B0' }}>{log.receiver_email || 'Anonymous'}</div>
-                  {log.ip_address && <div style={{ fontSize: '0.7rem', color: '#555', marginTop: '1px' }}>{log.ip_address}</div>}
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h1 style={{ overflow: 'hidden', fontSize: '0.95rem', letterSpacing: '-0.015em', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {file.file_name}
+              </h1>
+              <p style={{ marginTop: '0.2rem', color: '#777c81', fontSize: '0.7rem' }}>{formatBytes(file.file_size)}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="premium-dashboard-card" style={{ marginTop: '1rem', padding: '0.85rem 0.95rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.38rem', color: isActive ? 'var(--bs-success)' : '#8b9095', fontSize: '0.78rem', fontWeight: 680 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: isActive ? 'var(--bs-success)' : '#666b70', boxShadow: isActive ? '0 0 12px rgba(69,199,142,0.4)' : 'none' }} />
+                {isActive ? 'Link is active' : 'Link is inactive'}
+              </div>
+              <p style={{ marginTop: '0.22rem', color: '#656a70', fontSize: '0.63rem' }}>Created {formatDate(file.created_at)}</p>
+            </div>
+            <span className={isActive ? 'bs-badge bs-badge-green' : 'bs-badge'}>{isActive ? 'Live' : 'Expired'}</span>
+          </div>
+        </section>
+
+        <section className="premium-dashboard-card" style={{ marginTop: '0.72rem', padding: '0 0.95rem' }}>
+          <div className="premium-detail-row">
+            <span className="premium-detail-label">Link</span>
+            <button
+              type="button"
+              onClick={() => void copyLink()}
+              style={{ display: 'flex', minWidth: 0, maxWidth: '70%', alignItems: 'center', gap: '0.45rem', border: 0, background: 'transparent', color: '#deded9', cursor: 'pointer', fontSize: '0.72rem' }}
+            >
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{secureLink.replace(/^https?:\/\//, '')}</span>
+              {copied ? <Check size={14} color="var(--bs-success)" /> : <Copy size={14} />}
+            </button>
+          </div>
+          <div className="premium-detail-row">
+            <span className="premium-detail-label">Expires</span>
+            <span className="premium-detail-value">{formatDate(file.expires_at)}</span>
+          </div>
+          <div className="premium-detail-row">
+            <span className="premium-detail-label">Password protection</span>
+            <span className="premium-detail-value">{file.password_hash ? 'Enabled' : 'Not enabled'}</span>
+          </div>
+          <div className="premium-detail-row">
+            <span className="premium-detail-label">Allowed downloads</span>
+            <span className="premium-detail-value">{file.max_downloads ?? 'Unlimited'}</span>
+          </div>
+          <div className="premium-detail-row">
+            <span className="premium-detail-label">Created by</span>
+            <span className="premium-detail-value">{file.sender_email}</span>
+          </div>
+        </section>
+
+        <section style={{ marginTop: '1.1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.58rem' }}>
+            <h2 style={{ fontSize: '0.82rem' }}>Analytics</h2>
+            <span style={{ color: '#6e7378', fontSize: '0.65rem' }}>Last seven days</span>
+          </div>
+
+          <div className="premium-analytics-grid">
+            <div className="premium-analytics-card">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Users size={15} color="#8d9297" />
+                <span style={{ color: '#676c71', fontSize: '0.61rem' }}>Recipients</span>
+              </div>
+              <div style={{ marginTop: '0.55rem', color: '#f1f1ed', fontSize: '1.42rem', fontWeight: 760 }}>{uniqueRecipients}</div>
+              <Sparkline values={uniqueRecipientsByDay} />
+            </div>
+
+            <div className="premium-analytics-card">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Download size={15} color="#8d9297" />
+                <span style={{ color: '#676c71', fontSize: '0.61rem' }}>Downloads</span>
+              </div>
+              <div style={{ marginTop: '0.55rem', color: '#f1f1ed', fontSize: '1.42rem', fontWeight: 760 }}>{file.download_count ?? logs.length}</div>
+              <Sparkline values={activityByDay} />
+            </div>
+          </div>
+        </section>
+
+        <section style={{ display: 'grid', gap: '0.65rem', marginTop: '1.15rem' }}>
+          <button type="button" className="premium-primary-button" onClick={() => void copyLink()} disabled={!isActive}>
+            {copied ? <Check size={17} /> : <Copy size={17} />}
+            {copied ? 'Link copied' : 'Copy secure link'}
+          </button>
+          <button type="button" className="premium-secondary-button" onClick={() => void shareLink()} disabled={!isActive}>
+            <Share2 size={17} />
+            Share link
+          </button>
+        </section>
+
+        <section style={{ marginTop: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.58rem' }}>
+            <Activity size={15} color="var(--bs-gold)" />
+            <h2 style={{ fontSize: '0.82rem' }}>Download activity</h2>
+          </div>
+
+          <div className="premium-dashboard-card" style={{ overflow: 'hidden' }}>
+            {logs.length === 0 ? (
+              <div style={{ padding: '1.7rem 1rem', textAlign: 'center' }}>
+                <Download size={24} color="#555b62" style={{ margin: '0 auto' }} />
+                <p style={{ marginTop: '0.45rem', color: '#6d7277', fontSize: '0.74rem' }}>No downloads yet</p>
+              </div>
+            ) : (
+              logs.slice(0, 20).map((log) => (
+                <div key={log.id} className="premium-file-row" style={{ cursor: 'default' }}>
+                  <span className="premium-file-icon" style={{ width: 34, height: 34 }}>
+                    <Download size={15} color="#8d9297" />
+                  </span>
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <span style={{ display: 'block', overflow: 'hidden', color: '#dededa', fontSize: '0.74rem', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {log.receiver_email || 'Anonymous recipient'}
+                    </span>
+                    <span style={{ display: 'block', marginTop: '0.15rem', color: '#666b70', fontSize: '0.62rem' }}>
+                      {log.ip_address || 'Private network'}
+                    </span>
+                  </span>
+                  <span style={{ color: '#666b70', fontSize: '0.62rem' }}>{timeAgo(log.downloaded_at)}</span>
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#555', flexShrink: 0 }}>{timeAgo(log.downloaded_at)}</div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-        )}
+        </section>
 
-        {logs.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#555' }}>
-            <Download size={28} style={{ margin: '0 auto 0.5rem', opacity: 0.4 }} />
-            <p style={{ fontSize: '0.875rem' }}>No downloads yet</p>
-          </div>
-        )}
+        <section className="premium-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginTop: '0.8rem', padding: '0.8rem 0.9rem' }}>
+          <CalendarClock size={15} color="#777c81" />
+          <p style={{ color: '#6f7479', fontSize: '0.65rem' }}>
+            BoltShare will automatically remove this file after its expiry date.
+          </p>
+        </section>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+    </main>
   )
 }
