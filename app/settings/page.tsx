@@ -6,8 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import {
   Moon, Globe, Clock, Download, HelpCircle,
   Mail, Info, LogOut, Trash2, ChevronRight,
-  Home, ArrowLeftRight, Users, Settings, Shield,
-  Zap, AlertTriangle, Loader2
+  Home, ArrowLeftRight, Users, Settings, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -197,14 +196,6 @@ export default function SettingsPage() {
   }
 
   const selectedLang = languages.find(l => l.code === lang) || languages[0]
-
-  const s = (val: number | null) => {
-    if (!val) return t.unlimited
-    if (val === 1)   return `1 ${t.hour}`
-    if (val < 24)    return `${val} ${t.hours}`
-    if (val === 24)  return `24 ${t.hours}`
-    return `${val / 24} ${t.days}`
-  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#0D0D0D', paddingBottom: '80px' }}>
