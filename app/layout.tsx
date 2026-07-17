@@ -3,7 +3,6 @@ import './globals.css'
 import { AuthProvider } from '@/lib/AuthContext'
 import { Toaster } from 'react-hot-toast'
 import { APP_URL } from '@/lib/config'
-import { NativeAuthBridge } from '@/components/NativeAuthBridge'
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -64,8 +63,6 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="bg-[#0D0D0D] text-white antialiased">
         <AuthProvider>
-          <NativeAuthBridge />
-
           {children}
 
           <Toaster
