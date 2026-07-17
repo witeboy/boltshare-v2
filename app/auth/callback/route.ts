@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const code = searchParams.get('code')
-  const requestedNext = searchParams.get('next')
-  const next = requestedNext?.startsWith('/') && !requestedNext.startsWith('//')
-    ? requestedNext
-    : '/dashboard'
+// Preserve older links while moving all confirmation through the user-initiated
+// mobile callback page. The callback page performs the one-time exchange only
+// after the user taps Confirm, which protects links from email scanners.
+export async function GET(request: NextRequest) {
+  const source = new URL(request.url)
+  const target = new URL('/auth/mobile/callback', request.url)
 
-  if (code) {
-    const supabase = await createServerClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(new URL(next, req.url))
-    }
-
-    console.error('Auth callback exchange failed:', error.message)
+  for (const key of [
+    'code',
+    'token_hash',
+    'next',
+    'error',
+    'error_description',
+  ]) {
+    const value = source.searchParams.get(key)
+    if (value) target.searchParams.set(key, value)
   }
 
-  return NextResponse.redirect(new URL('/?auth_error=magic_link_invalid', req.url))
+  return NextResponse.redirect(target)
 }
