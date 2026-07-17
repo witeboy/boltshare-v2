@@ -1,11 +1,6 @@
 export const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || 'https://boltshare.rcinc.app'
 
-export const AUTH_CALLBACK_URL = new URL(
-  '/auth/mobile/callback',
-  APP_URL,
-).toString()
-
 // Vercel Functions reject request or response bodies above 4.5 MB. Keep a
 // safety margin for multipart form-data overhead until direct-to-storage
 // uploads are enabled for this deployment.
