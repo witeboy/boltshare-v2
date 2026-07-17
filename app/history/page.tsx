@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import {
-  ArrowLeft, FileText, Image, Film, Archive,
+  FileText, Image as ImageIcon, Film, Archive,
   Copy, Trash2, Home, ArrowLeftRight,
-  Users, Settings, Send, Download, Clock, ChevronRight
+  Users, Settings, Send, Download
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 function fileIcon(type: string) {
-  if (type?.includes('image')) return <Image size={18} color="#F5C518" />
+  if (type?.includes('image')) return <ImageIcon size={18} color="#F5C518" />
   if (type?.includes('video')) return <Film size={18} color="#8B5CF6" />
   if (type?.includes('pdf'))   return <FileText size={18} color="#E24B4A" />
   if (type?.includes('zip'))   return <Archive size={18} color="#F5A623" />
