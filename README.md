@@ -31,6 +31,6 @@ Apply the SQL migrations in [`supabase/migrations`](supabase/migrations) to the 
 
 New uploads use Supabase Storage's resumable TUS endpoint directly from the browser. File bytes do not pass through Vercel Functions, so BoltShare has no application-level file-size cap. The effective limit is the connected Supabase project's global Storage limit and available quota.
 
-Every transfer is fixed to a 48-hour lifetime. The hourly cleanup job removes the stored object, the `shared_files` row, and its cascading `download_logs` rows. Existing Bunny-backed transfers remain readable and deletable during the transition.
+Every transfer is fixed to a 48-hour lifetime. The cleanup job removes the stored object, the `shared_files` row, and its cascading `download_logs` rows. Existing Bunny-backed transfers remain readable and deletable during the transition.
 
 See [`docs/storage-and-retention.md`](docs/storage-and-retention.md) for the required Supabase, Vercel, migration, and legacy Bunny configuration.

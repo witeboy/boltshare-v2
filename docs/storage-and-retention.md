@@ -19,10 +19,10 @@ New files use the private `transfers` Supabase Storage bucket. Rows created befo
 2. In Supabase **Storage Settings**, raise the global maximum file size to the largest size the deployment should accept. The migration leaves the `transfers` bucket without a smaller per-bucket limit. The Supabase plan, global setting, quota, and TUS service remain the infrastructure limits.
 3. Keep `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` configured in Vercel. The service-role key must remain server-only.
 4. Set `CRON_SECRET` in Vercel to a random value of at least 16 characters. Vercel automatically sends it as a Bearer token to the cleanup route.
-5. Deploy on a Vercel plan that supports hourly cron schedules (Pro or Enterprise), or invoke `GET /api/cleanup-expired-files` hourly from an external scheduler with `Authorization: Bearer <CRON_SECRET>`. Vercel Hobby only supports daily cron execution and cannot deploy the hourly expression in `vercel.json`.
+5. For physical deletion within about one hour of the 48-hour expiry, invoke `GET /api/cleanup-expired-files` hourly from an external scheduler with `Authorization: Bearer <CRON_SECRET>`, or change `vercel.json` to an hourly schedule after upgrading to Vercel Pro or Enterprise. The committed daily schedule is a deployable fallback for Vercel Hobby, which rejects hourly cron expressions.
 6. Keep the Bunny variables while any pre-migration rows exist: `BUNNY_STORAGE_ZONE`, `BUNNY_STORAGE_HOST`, `BUNNY_STORAGE_PASSWORD`, and `BUNNY_CDN_HOSTNAME`. They can be removed after all legacy rows have expired and cleanup has succeeded.
 
-The cron runs at the start of every hour, so physical deletion normally occurs within one hour after the exact 48-hour expiry. Access is rejected immediately once `expires_at` is reached, even before cleanup runs.
+Access is rejected immediately once `expires_at` reaches exactly 48 hours. With the recommended hourly scheduler, physical deletion normally follows within one hour. The committed Vercel Hobby fallback runs daily, so physical deletion can otherwise occur up to 24 hours later.
 
 ## Operational checks
 
