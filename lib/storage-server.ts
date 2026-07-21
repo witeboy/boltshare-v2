@@ -1,5 +1,6 @@
 import type { createAdminClient } from '@/lib/supabase/server'
 import { TRANSFER_BUCKET } from '@/lib/config'
+import { abortR2MultipartUpload, createR2DownloadUrl, deleteR2Object } from '@/lib/r2'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -8,6 +9,12 @@ export type StoredFile = {
   file_url?: string | null
   storage_path?: string | null
   storage_provider?: string | null
+}
+
+export type PendingStoredFile = {
+  object_path: string
+  storage_provider?: string | null
+  upload_id?: string | null
 }
 
 function httpsHost(value: string) {
@@ -21,7 +28,15 @@ function providerFor(file: StoredFile) {
 }
 
 export async function deleteStoredFile(admin: AdminClient, file: StoredFile) {
-  if (providerFor(file) === 'supabase') {
+  const provider = providerFor(file)
+
+  if (provider === 'r2') {
+    if (!file.storage_path) throw new Error('R2 storage path is missing')
+    await deleteR2Object(file.storage_path)
+    return
+  }
+
+  if (provider === 'supabase') {
     if (!file.storage_path) throw new Error('Supabase storage path is missing')
     const { error } = await admin.storage.from(TRANSFER_BUCKET).remove([file.storage_path])
     if (error) throw error
@@ -58,12 +73,32 @@ export async function deleteStoredFile(admin: AdminClient, file: StoredFile) {
   }
 }
 
+export async function deletePendingStoredFile(admin: AdminClient, upload: PendingStoredFile) {
+  if (upload.storage_provider === 'r2') {
+    if (upload.upload_id) {
+      await abortR2MultipartUpload(upload.object_path, upload.upload_id)
+    }
+    await deleteR2Object(upload.object_path)
+    return
+  }
+
+  const { error } = await admin.storage.from(TRANSFER_BUCKET).remove([upload.object_path])
+  if (error) throw error
+}
+
 export async function createDirectDownloadUrl(
   admin: AdminClient,
   file: StoredFile,
   downloadName: string,
 ) {
-  if (providerFor(file) === 'supabase') {
+  const provider = providerFor(file)
+
+  if (provider === 'r2') {
+    if (!file.storage_path) throw new Error('R2 storage path is missing')
+    return createR2DownloadUrl(file.storage_path, downloadName)
+  }
+
+  if (provider === 'supabase') {
     if (!file.storage_path) throw new Error('Supabase storage path is missing')
     const { data, error } = await admin.storage
       .from(TRANSFER_BUCKET)

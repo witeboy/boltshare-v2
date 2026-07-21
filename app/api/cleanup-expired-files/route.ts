@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TRANSFER_BUCKET } from '@/lib/config'
 import { createAdminClient } from '@/lib/supabase/server'
-import { deleteStoredFile } from '@/lib/storage-server'
+import { deletePendingStoredFile, deleteStoredFile } from '@/lib/storage-server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -33,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   const { data: abandonedUploads, error: abandonedLookupError } = await supabase
     .from('pending_uploads')
-    .select('object_path')
+    .select('object_path, storage_provider, upload_id')
     .lte('expires_at', now)
     .order('expires_at', { ascending: true })
     .limit(200)
@@ -77,10 +76,7 @@ export async function GET(req: NextRequest) {
       if (shareLookupError) throw shareLookupError
 
       if (!activeShare) {
-        const { error: storageError } = await supabase.storage
-          .from(TRANSFER_BUCKET)
-          .remove([upload.object_path])
-        if (storageError) throw storageError
+        await deletePendingStoredFile(supabase, upload)
       }
 
       const { error: pendingDeleteError } = await supabase

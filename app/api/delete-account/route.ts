@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { TRANSFER_BUCKET } from '@/lib/config'
 import { createAdminClient, createServerClient } from '@/lib/supabase/server'
-import { deleteStoredFile } from '@/lib/storage-server'
+import { deletePendingStoredFile, deleteStoredFile } from '@/lib/storage-server'
 
 export async function POST() {
   try {
@@ -25,14 +24,11 @@ export async function POST() {
 
     const { data: pendingUploads, error: pendingLookupError } = await admin
       .from('pending_uploads')
-      .select('object_path')
+      .select('object_path, storage_provider, upload_id')
       .eq('user_id', user.id)
     if (pendingLookupError) throw pendingLookupError
     for (const upload of pendingUploads || []) {
-      const { error: storageError } = await admin.storage
-        .from(TRANSFER_BUCKET)
-        .remove([upload.object_path])
-      if (storageError) throw storageError
+      await deletePendingStoredFile(admin, upload)
     }
     const { error: pendingDeleteError } = await admin
       .from('pending_uploads')
