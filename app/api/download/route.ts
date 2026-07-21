@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MAX_TRANSFER_BYTES } from '@/lib/config'
 import { createAdminClient } from '@/lib/supabase/server'
+import { createDirectDownloadUrl } from '@/lib/storage-server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient()
     const { data: file, error: lookupError } = await admin
       .from('shared_files')
-      .select('id, file_name, file_type, file_url, file_size, status, expires_at, max_downloads, download_count, password_hash')
+      .select('id, file_name, file_url, bunny_path, storage_provider, storage_path, status, expires_at, max_downloads, download_count, password_hash')
       .eq('id', fileId)
       .eq('share_token', token)
       .maybeSingle()
@@ -49,28 +49,13 @@ export async function POST(req: NextRequest) {
     if (file.password_hash && (!password || await sha256(password) !== file.password_hash)) {
       return NextResponse.json({ error: 'Wrong password' }, { status: 401 })
     }
-    if (Number(file.file_size || 0) > MAX_TRANSFER_BYTES) {
-      return NextResponse.json({ error: 'This legacy file is too large for the current secure download route' }, { status: 413 })
-    }
 
-    const allowedCdn = process.env.BUNNY_CDN_HOSTNAME
-    if (!allowedCdn) {
+    let downloadUrl: string
+    try {
+      downloadUrl = await createDirectDownloadUrl(admin, file, safeDownloadName(file.file_name))
+    } catch (storageError) {
+      console.error('Direct download authorization failed:', storageError)
       return NextResponse.json({ error: 'File storage is not configured' }, { status: 503 })
-    }
-
-    const fileUrl = new URL(file.file_url)
-    const allowedHost = new URL(allowedCdn.includes('://') ? allowedCdn : `https://${allowedCdn}`).host
-    if (fileUrl.protocol !== 'https:' || fileUrl.host !== allowedHost) {
-      console.error('Blocked unexpected file host:', fileUrl.host)
-      return NextResponse.json({ error: 'File location is invalid' }, { status: 500 })
-    }
-
-    const storageResponse = await fetch(fileUrl, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(45_000),
-    })
-    if (!storageResponse.ok || !storageResponse.body) {
-      return NextResponse.json({ error: 'The stored file could not be retrieved' }, { status: 502 })
     }
 
     let updateQuery = admin
@@ -100,17 +85,10 @@ export async function POST(req: NextRequest) {
     })
     if (logError) console.error('Download log insert failed:', logError.message)
 
-    const name = safeDownloadName(file.file_name)
-    return new NextResponse(storageResponse.body, {
-      status: 200,
-      headers: {
-        'Content-Type': file.file_type || storageResponse.headers.get('content-type') || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${name}"; filename*=UTF-8''${encodeURIComponent(name)}`,
-        'Content-Length': String(file.file_size || storageResponse.headers.get('content-length') || ''),
-        'Cache-Control': 'private, no-store, max-age=0',
-        'X-Content-Type-Options': 'nosniff',
-      },
-    })
+    return NextResponse.json(
+      { downloadUrl },
+      { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
+    )
   } catch (error) {
     console.error('Download route error:', error)
     return NextResponse.json({ error: 'Download failed. Please try again.' }, { status: 500 })

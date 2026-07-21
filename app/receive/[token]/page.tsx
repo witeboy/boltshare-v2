@@ -28,7 +28,9 @@ function fileIcon(type: string, size = 28) {
 function formatBytes(bytes: number) {
   if (!bytes) return '—'
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024 * 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+  return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`
 }
 
 function availabilityError(files: SharedFile[]) {
@@ -93,21 +95,21 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
         throw new Error(payload.error || 'Download could not be started')
       }
 
-      const blob = await response.blob()
-      const objectUrl = URL.createObjectURL(blob)
+      const payload = await response.json()
+      if (typeof payload.downloadUrl !== 'string') throw new Error('Download could not be authorized')
       const anchor = document.createElement('a')
-      anchor.href = objectUrl
+      anchor.href = payload.downloadUrl
       anchor.download = file.fileName
+      anchor.rel = 'noopener'
       document.body.appendChild(anchor)
       anchor.click()
       document.body.removeChild(anchor)
-      URL.revokeObjectURL(objectUrl)
       setPwLocked(false)
       setFiles(current => current.map(item => item.id === file.id
         ? { ...item, downloadCount: item.downloadCount + 1 }
         : item
       ))
-      toast.success(`${file.fileName} downloaded`)
+      toast.success(`${file.fileName} download started`)
     } catch (downloadError) {
       toast.error(downloadError instanceof Error ? downloadError.message : 'Download failed. Please try again.')
     } finally {
@@ -194,7 +196,7 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
         </section>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '1rem' }}>
-          {['Secure link', 'Bunny CDN', 'Auto-expiring'].map(label => <span key={label} style={{ fontSize: '0.68rem', color: '#555' }}>{label}</span>)}
+          {['Secure link', 'Direct storage', 'Auto-expiring'].map(label => <span key={label} style={{ fontSize: '0.68rem', color: '#555' }}>{label}</span>)}
         </div>
       </main>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

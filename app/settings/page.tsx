@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { TRANSFER_TTL_HOURS } from '@/lib/config'
 
 // ── Translations ───────────────────────────
 const translations: Record<string, Record<string, string>> = {
@@ -148,21 +149,12 @@ const languages = [
   { code: 'pt', label: 'Português', flag: '🇧🇷' },
 ]
 
-const expiryOptions = [
-  { value: 1,   labelKey: '1 hour' },
-  { value: 6,   labelKey: '6 hours' },
-  { value: 24,  labelKey: '24 hours' },
-  { value: 72,  labelKey: '3 days' },
-  { value: 168, labelKey: '7 days' },
-]
-
 export default function SettingsPage() {
   const { user, isAuthenticated, logout } = useAuth()
   const router  = useRouter()
 
   const [lang, setLang]               = useState('en')
   const [showLangPicker, setShowLangPicker] = useState(false)
-  const [defaultExpiry, setDefaultExpiry]   = useState(24)
   const [defaultMaxDl, setDefaultMaxDl]     = useState<number | null>(null)
   const [deleteConfirm, setDeleteConfirm]   = useState(false)
   const [deleteText, setDeleteText]         = useState('')
@@ -263,15 +255,7 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
             <Clock size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
             <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{t.defaultExpiry}</span>
-            <select
-              value={defaultExpiry}
-              onChange={e => setDefaultExpiry(Number(e.target.value))}
-              style={{ background: '#242424', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: '8px', color: '#fff', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', outline: 'none' }}
-            >
-              {expiryOptions.map(o => (
-                <option key={o.value} value={o.value}>{o.labelKey}</option>
-              ))}
-            </select>
+            <span style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 600 }}>{TRANSFER_TTL_HOURS} hours</span>
           </div>
 
           {/* Default Max Downloads */}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { APP_URL } from '@/lib/config'
+import { APP_URL, TRANSFER_TTL_HOURS } from '@/lib/config'
 import { createServerClient } from '@/lib/supabase/server'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -46,13 +46,10 @@ export async function POST(req: NextRequest) {
     const fileName = String(payload.fileName || '').slice(0, 180)
     const shareCode = String(payload.shareCode || '').replace(/[^A-Z2-9]/gi, '').slice(0, 10)
     const sender = String(payload.senderName || user.user_metadata?.full_name || user.email).slice(0, 100)
-    const expiryHours = Number(payload.expiryHours)
     const expiresAt = payload.expiresAt ? new Date(payload.expiresAt) : null
     const expiryText = expiresAt && !Number.isNaN(expiresAt.getTime())
       ? expiresAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
-      : Number.isFinite(expiryHours) && expiryHours > 0
-        ? `in ${Math.min(expiryHours, 720)} hours`
-        : 'according to the sender’s expiry setting'
+      : `${TRANSFER_TTL_HOURS} hours after upload`
 
     const subject = String(payload.subject || `${sender} shared ${fileName || 'a file'} with you on BoltShare`).slice(0, 180)
     const escapedSender = escapeHtml(sender)
@@ -71,7 +68,7 @@ ${fileName ? `<div class="file"><strong>${escapedFile}</strong><br><span class="
 ${shareCode ? `<div class="file">Access code<br><span class="code">${escapedCode}</span></div>` : ''}
 ${link ? `<a class="cta" href="${escapedLink}">${fileName ? 'Download file' : 'Open BoltShare'}</a>` : ''}
 ${shareCode ? `<p class="muted">Or enter the code at <a style="color:#f5c518" href="${escapedAppUrl}/receive-code">${escapedAppUrl}/receive-code</a>.</p>` : ''}
-<p class="muted">Private links can be protected with a password and expire automatically.</p></div>
+<p class="muted">Private links can be protected with a password. The file and transfer record are permanently deleted ${TRANSFER_TTL_HOURS} hours after upload.</p></div>
 <div class="footer">BoltShare by RC Inc. · Automated message</div></div></body></html>`
 
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {

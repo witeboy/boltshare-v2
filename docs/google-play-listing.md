@@ -38,11 +38,11 @@ HOW BOLTSHARE WORKS
 
 1. Sign in securely.
 2. Choose a file to upload.
-3. Set password, expiry and download options.
+3. Set password and download options.
 4. Send the private link or transfer code.
 5. Track downloads from your dashboard.
 
-BoltShare is designed for quick, controlled file sharing when email attachments are inconvenient. Current transfers support files up to 4 MB.
+BoltShare is designed for quick, controlled file sharing when email attachments are inconvenient. Large files upload directly to secure storage and every transfer is permanently deleted after 48 hours.
 
 Start a secure file transfer with BoltShare today.
 
