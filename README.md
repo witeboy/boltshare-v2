@@ -29,8 +29,8 @@ Apply the SQL migrations in [`supabase/migrations`](supabase/migrations) to the 
 
 ## Large transfers and retention
 
-New uploads use Supabase Storage's resumable TUS endpoint directly from the browser. File bytes do not pass through Vercel Functions, so BoltShare has no application-level file-size cap. The effective limit is the connected Supabase project's global Storage limit and available quota.
+New uploads use Cloudflare R2 multipart uploads directly from the browser. File bytes do not pass through Vercel Functions, so BoltShare has no application-level proxy limit. Part sizing scales automatically up to R2's approximately 4.995 TiB object limit, unless `MAX_TRANSFER_BYTES` sets a lower operational ceiling.
 
-Every transfer is fixed to a 48-hour lifetime. The cleanup job removes the stored object, the `shared_files` row, and its cascading `download_logs` rows. Existing Bunny-backed transfers remain readable and deletable during the transition.
+Every transfer is fixed to a 48-hour lifetime. The cleanup job removes the stored object, the `shared_files` row, and its cascading `download_logs` rows. Existing Supabase Storage and Bunny-backed transfers remain readable and deletable during the transition.
 
-See [`docs/storage-and-retention.md`](docs/storage-and-retention.md) for the required Supabase, Vercel, migration, and legacy Bunny configuration.
+See [`docs/storage-and-retention.md`](docs/storage-and-retention.md) for the required Cloudflare, Supabase, Vercel, migration, and legacy-provider configuration.

@@ -10,8 +10,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { QRCodeSVG } from 'qrcode.react'
-import * as tus from 'tus-js-client'
-import { TRANSFER_TTL_HOURS, TUS_CHUNK_BYTES } from '@/lib/config'
+import { TRANSFER_TTL_HOURS } from '@/lib/config'
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return bytes + ' B'
@@ -22,38 +21,142 @@ function formatBytes(bytes: number) {
 }
 
 type UploadAuthorization = {
-  bucketName: string
   objectPath: string
-  uploadEndpoint: string
-  uploadToken: string
+  uploadId: string
+  partSize: number
+  partCount: number
 }
 
-function uploadDirectly(
+type CompletedPart = {
+  partNumber: number
+  etag: string
+}
+
+const PART_URL_BATCH_SIZE = 50
+const UPLOAD_CONCURRENCY = 4
+const RETRY_DELAYS = [0, 2_000, 5_000, 10_000, 20_000]
+
+async function requestPartUrls(authorization: UploadAuthorization, partNumbers: number[]) {
+  const response = await fetch('/api/uploads/part-urls', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      objectPath: authorization.objectPath,
+      uploadId: authorization.uploadId,
+      partNumbers,
+    }),
+  })
+  const result = await response.json()
+  if (!response.ok || !Array.isArray(result.urls)) {
+    throw new Error(result.error || 'Upload parts could not be prepared')
+  }
+  return new Map<number, string>(
+    result.urls.map((entry: { partNumber: number; url: string }) => [entry.partNumber, entry.url]),
+  )
+}
+
+function putPart(
+  url: string,
+  data: Blob,
+  onProgress: (uploaded: number) => void,
+) {
+  return new Promise<string>((resolve, reject) => {
+    const request = new XMLHttpRequest()
+    request.open('PUT', url)
+    request.upload.onprogress = event => {
+      if (event.lengthComputable) onProgress(event.loaded)
+    }
+    request.onerror = () => reject(new Error('The network interrupted this upload part'))
+    request.onabort = () => reject(new Error('The upload was cancelled'))
+    request.onload = () => {
+      if (request.status < 200 || request.status >= 300) {
+        reject(new Error(`Storage rejected an upload part (${request.status})`))
+        return
+      }
+      const etag = request.getResponseHeader('ETag')
+      if (!etag) {
+        reject(new Error('Storage did not confirm an upload part'))
+        return
+      }
+      onProgress(data.size)
+      resolve(etag)
+    }
+    request.send(data)
+  })
+}
+
+async function uploadPartWithRetry(
+  file: File,
+  authorization: UploadAuthorization,
+  partNumber: number,
+  initialUrl: string,
+  onProgress: (uploaded: number) => void,
+) {
+  const start = (partNumber - 1) * authorization.partSize
+  const data = file.slice(start, Math.min(start + authorization.partSize, file.size))
+  let url = initialUrl
+  let lastError: unknown
+
+  for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
+    try {
+      if (RETRY_DELAYS[attempt]) {
+        await new Promise(resolve => window.setTimeout(resolve, RETRY_DELAYS[attempt]))
+        url = (await requestPartUrls(authorization, [partNumber])).get(partNumber) || ''
+      }
+      if (!url) throw new Error('The upload part URL is missing')
+      return await putPart(url, data, onProgress)
+    } catch (error) {
+      lastError = error
+      onProgress(0)
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('An upload part repeatedly failed')
+}
+
+async function uploadDirectly(
   file: File,
   authorization: UploadAuthorization,
   onProgress: (uploaded: number, total: number) => void,
 ) {
-  return new Promise<void>((resolve, reject) => {
-    const upload = new tus.Upload(file, {
-      endpoint: authorization.uploadEndpoint,
-      retryDelays: [0, 3_000, 5_000, 10_000, 20_000],
-      headers: { 'x-signature': authorization.uploadToken },
-      uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
-      chunkSize: TUS_CHUNK_BYTES,
-      metadata: {
-        bucketName: authorization.bucketName,
-        objectName: authorization.objectPath,
-        contentType: file.type || 'application/octet-stream',
-        cacheControl: '0',
-      },
-      onError: reject,
-      onProgress,
-      onSuccess: () => resolve(),
-    })
+  const completedParts: CompletedPart[] = []
+  const progressByPart = new Map<number, number>()
+  const reportProgress = (partNumber: number, uploaded: number) => {
+    progressByPart.set(partNumber, uploaded)
+    onProgress(
+      Array.from(progressByPart.values()).reduce((total, value) => total + value, 0),
+      file.size,
+    )
+  }
 
-    upload.start()
-  })
+  for (let batchStart = 1; batchStart <= authorization.partCount; batchStart += PART_URL_BATCH_SIZE) {
+    const partNumbers = Array.from(
+      { length: Math.min(PART_URL_BATCH_SIZE, authorization.partCount - batchStart + 1) },
+      (_, index) => batchStart + index,
+    )
+    const urls = await requestPartUrls(authorization, partNumbers)
+    let nextIndex = 0
+
+    const worker = async () => {
+      while (nextIndex < partNumbers.length) {
+        const partNumber = partNumbers[nextIndex++]
+        const etag = await uploadPartWithRetry(
+          file,
+          authorization,
+          partNumber,
+          urls.get(partNumber) || '',
+          uploaded => reportProgress(partNumber, uploaded),
+        )
+        completedParts.push({ partNumber, etag })
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(UPLOAD_CONCURRENCY, partNumbers.length) }, () => worker()),
+    )
+  }
+
+  return completedParts.sort((a, b) => a.partNumber - b.partNumber)
 }
 
 const SHARE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -125,12 +228,15 @@ export default function UploadPage() {
         const authorizeRes = await fetch('/api/uploads/authorize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileSize: file.size }),
+          body: JSON.stringify({
+            fileSize: file.size,
+            fileType: file.type || 'application/octet-stream',
+          }),
         })
         const authorization = await authorizeRes.json()
         if (!authorizeRes.ok) throw new Error(authorization.error || 'Upload failed')
 
-        await uploadDirectly(file, authorization as UploadAuthorization, (uploaded, total) => {
+        const parts = await uploadDirectly(file, authorization as UploadAuthorization, (uploaded, total) => {
           const fileFraction = total > 0 ? uploaded / total : 0
           setProgress(Math.round(((i + fileFraction) / files.length) * 100))
         })
@@ -140,6 +246,8 @@ export default function UploadPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             objectPath: authorization.objectPath,
+            uploadId: authorization.uploadId,
+            parts,
             fileName: file.name,
             fileType: file.type || 'application/octet-stream',
             fileSize: file.size,
@@ -314,7 +422,7 @@ export default function UploadPage() {
           Drag &amp; drop files here
         </p>
         <p style={{ color: '#8A8A8A', fontSize: '0.8rem', marginBottom: '4px' }}>or click to browse</p>
-        <p style={{ color: '#777', fontSize: '0.75rem' }}>Large files supported · storage plan limits apply</p>
+        <p style={{ color: '#777', fontSize: '0.75rem' }}>Resumable multipart transfers · files up to approximately 5 TB</p>
         <input ref={inputRef} type="file" multiple onChange={onPick} style={{ display: 'none' }} />
       </div>
 
