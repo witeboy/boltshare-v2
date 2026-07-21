@@ -328,7 +328,7 @@ export default function OnboardingPage() {
                   <span className="premium-security-icon"><DatabaseZap size={15} /></span>
                   <div>
                     <div style={{ fontSize: '0.79rem', fontWeight: 660, color: '#f0f0ec' }}>Automatic expiry</div>
-                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>Your files are removed automatically when access expires.</p>
+                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>Files and transfer records are permanently deleted 48 hours after upload.</p>
                   </div>
                 </div>
               </div>

@@ -1,10 +1,9 @@
 export const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || 'https://boltshare.rcinc.app'
 
-// Vercel Functions reject request or response bodies above 4.5 MB. Keep a
-// safety margin for multipart form-data overhead until direct-to-storage
-// uploads are enabled for this deployment.
-export const MAX_TRANSFER_BYTES = 4_000_000
+export const TRANSFER_BUCKET = 'transfers'
+export const TRANSFER_TTL_HOURS = 48
+export const TUS_CHUNK_BYTES = 6 * 1024 * 1024
 
 export function getSupabasePublicConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -43,4 +42,15 @@ export function getSupabaseServiceRoleKey() {
   }
 
   return serviceRoleKey
+}
+
+export function getSupabaseTusEndpoint() {
+  const { url } = getSupabasePublicConfig()
+  const projectRef = new URL(url).hostname.split('.')[0]
+
+  if (!projectRef) {
+    throw new Error('BoltShare storage URL is invalid')
+  }
+
+  return `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable`
 }

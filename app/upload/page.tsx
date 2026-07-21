@@ -10,12 +10,50 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { QRCodeSVG } from 'qrcode.react'
-import { MAX_TRANSFER_BYTES } from '@/lib/config'
+import * as tus from 'tus-js-client'
+import { TRANSFER_TTL_HOURS, TUS_CHUNK_BYTES } from '@/lib/config'
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return bytes + ' B'
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  if (bytes < 1024 * 1024 * 1024 * 1024) return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
+  return (bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1) + ' TB'
+}
+
+type UploadAuthorization = {
+  bucketName: string
+  objectPath: string
+  uploadEndpoint: string
+  uploadToken: string
+}
+
+function uploadDirectly(
+  file: File,
+  authorization: UploadAuthorization,
+  onProgress: (uploaded: number, total: number) => void,
+) {
+  return new Promise<void>((resolve, reject) => {
+    const upload = new tus.Upload(file, {
+      endpoint: authorization.uploadEndpoint,
+      retryDelays: [0, 3_000, 5_000, 10_000, 20_000],
+      headers: { 'x-signature': authorization.uploadToken },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      chunkSize: TUS_CHUNK_BYTES,
+      metadata: {
+        bucketName: authorization.bucketName,
+        objectName: authorization.objectPath,
+        contentType: file.type || 'application/octet-stream',
+        cacheControl: '0',
+      },
+      onError: reject,
+      onProgress,
+      onSuccess: () => resolve(),
+    })
+
+    upload.start()
+  })
 }
 
 const SHARE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -40,7 +78,7 @@ export default function UploadPage() {
   const [progress, setProgress]   = useState(0)
   const [shareLink, setShareLink] = useState('')
   const [shareCode, setShareCode] = useState('')
-  const [expiryHours, setExpiryHours]   = useState(24)
+  const [expiresAt, setExpiresAt] = useState('')
   const [maxDownloads, setMaxDownloads] = useState<number | null>(null)
   const [password, setPassword]         = useState('')
   const [usePassword, setUsePassword]   = useState(false)
@@ -63,10 +101,7 @@ export default function UploadPage() {
   const handleUpload = async () => {
     if (!isAuthenticated) { router.push('/'); return }
     if (files.length === 0) { toast.error('Please select at least one file'); return }
-    if (files.some(file => file.size > MAX_TRANSFER_BYTES)) {
-      toast.error('Each file must be 4 MB or smaller on the current upload route')
-      return
-    }
+    if (files.some(file => file.size <= 0)) { toast.error('Empty files cannot be uploaded'); return }
     if (usePassword && password.trim().length < 8) {
       toast.error('Use at least 8 characters for a protected share')
       return
@@ -81,44 +116,49 @@ export default function UploadPage() {
 
     try {
       const token = createShareCode()
-      const expiresAt = new Date(Date.now() + expiryHours * 3600000).toISOString()
       const passwordHash = usePassword ? await hashPassword(password) : ''
+      let confirmedExpiry = ''
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        setProgress(Math.round(((i + 0.5) / files.length) * 80))
 
-        // The authenticated server route uploads to Bunny and creates the
-        // database row as one operation, preventing orphaned/dead share links.
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('fileName', file.name)
-        formData.append('fileType', file.type || 'application/octet-stream')
-        formData.append('shareToken', token)
-        formData.append('expiresAt', expiresAt)
-        formData.append('expiryHours', String(expiryHours))
-        formData.append('maxDownloads', maxDownloads === null ? '' : String(maxDownloads))
-        formData.append('passwordHash', passwordHash)
-
-        const uploadRes = await fetch('/api/get-bunny-upload-url', {
+        const authorizeRes = await fetch('/api/uploads/authorize', {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileSize: file.size }),
+        })
+        const authorization = await authorizeRes.json()
+        if (!authorizeRes.ok) throw new Error(authorization.error || 'Upload failed')
+
+        await uploadDirectly(file, authorization as UploadAuthorization, (uploaded, total) => {
+          const fileFraction = total > 0 ? uploaded / total : 0
+          setProgress(Math.round(((i + fileFraction) / files.length) * 100))
         })
 
-        if (!uploadRes.ok) {
-          const err = await uploadRes.json()
-          throw new Error(err.error || 'Upload failed')
-        }
-
-        await uploadRes.json()
-
-        setProgress(Math.round(((i + 1) / files.length) * 80))
+        const completeRes = await fetch('/api/uploads/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            objectPath: authorization.objectPath,
+            fileName: file.name,
+            fileType: file.type || 'application/octet-stream',
+            fileSize: file.size,
+            shareToken: token,
+            maxDownloads,
+            passwordHash,
+          }),
+        })
+        const completed = await completeRes.json()
+        if (!completeRes.ok) throw new Error(completed.error || 'Share could not be created')
+        confirmedExpiry = completed.expiresAt || confirmedExpiry
+        setProgress(Math.round(((i + 1) / files.length) * 100))
       }
 
       setProgress(100)
       const link = `${window.location.origin}/receive/${token}`
       setShareLink(link)
       setShareCode(token)
+      setExpiresAt(confirmedExpiry)
       toast.success('File uploaded successfully!')
     } catch (err) {
       console.error(err)
@@ -199,7 +239,7 @@ export default function UploadPage() {
         <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
           <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: '#fff', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>Link Settings</div>
           {[
-            { icon: Clock,    label: 'Expire After',     value: expiryHours + ' hours' },
+            { icon: Clock,    label: 'Automatic deletion', value: `${TRANSFER_TTL_HOURS} hours` },
             { icon: Download, label: 'Max Downloads',    value: maxDownloads ? maxDownloads + 'x' : 'Unlimited' },
             { icon: Lock,     label: 'Password Protect', value: usePassword ? 'On' : 'Off' },
           ].map(({ icon: Icon, label, value }, i, arr) => (
@@ -211,7 +251,11 @@ export default function UploadPage() {
           ))}
         </div>
 
-        <button onClick={() => { setFiles([]); setShareLink(''); setShareCode('') }} style={{ width: '100%', background: '#F5C518', color: '#000', border: 'none', borderRadius: '14px', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
+        <p style={{ color: '#8A8A8A', fontSize: '0.78rem', lineHeight: 1.5, margin: '-0.5rem 0 1.25rem', textAlign: 'center' }}>
+          The files and their transfer records will be permanently deleted {expiresAt ? `on ${new Date(expiresAt).toLocaleString()}` : `after ${TRANSFER_TTL_HOURS} hours`}.
+        </p>
+
+        <button onClick={() => { setFiles([]); setShareLink(''); setShareCode(''); setExpiresAt('') }} style={{ width: '100%', background: '#F5C518', color: '#000', border: 'none', borderRadius: '14px', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
           Done
         </button>
       </div>
@@ -237,7 +281,7 @@ export default function UploadPage() {
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         {[
           { icon: Shield, label: 'Secure links', color: '#1D9E75' },
-          { icon: Zap,    label: 'Bunny CDN',    color: '#F5C518' },
+          { icon: Zap,    label: 'Direct storage', color: '#F5C518' },
           { icon: CheckCircle, label: 'Auto-expiring', color: '#60A5FA' },
         ].map(({ icon: Icon, label, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '4px 10px' }}>
@@ -270,7 +314,7 @@ export default function UploadPage() {
           Drag &amp; drop files here
         </p>
         <p style={{ color: '#8A8A8A', fontSize: '0.8rem', marginBottom: '4px' }}>or click to browse</p>
-        <p style={{ color: '#555', fontSize: '0.75rem' }}>Multiple files allowed · 4 MB per file</p>
+        <p style={{ color: '#777', fontSize: '0.75rem' }}>Large files supported · storage plan limits apply</p>
         <input ref={inputRef} type="file" multiple onChange={onPick} style={{ display: 'none' }} />
       </div>
 
@@ -309,18 +353,14 @@ export default function UploadPage() {
       <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
         <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: '#fff', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>Link Settings</div>
 
-        {/* Expire */}
+        {/* Expiry */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
           <Clock size={16} color="#8A8A8A" style={{ marginRight: '10px' }} />
-          <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>Expire After</span>
-          <select value={expiryHours} onChange={e => setExpiryHours(Number(e.target.value))}
-            style={{ background: '#242424', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: '8px', color: '#fff', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', outline: 'none' }}>
-            <option value={1}>1 hour</option>
-            <option value={6}>6 hours</option>
-            <option value={24}>24 hours</option>
-            <option value={72}>3 days</option>
-            <option value={168}>7 days</option>
-          </select>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.875rem', color: '#B0B0B0' }}>Automatic deletion</div>
+            <div style={{ color: '#666', fontSize: '0.7rem', marginTop: '2px' }}>File and transfer record are permanently removed</div>
+          </div>
+          <span style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 600 }}>{TRANSFER_TTL_HOURS} hours</span>
         </div>
 
         {/* Max downloads */}

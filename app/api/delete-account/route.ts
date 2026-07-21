@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server'
+import { TRANSFER_BUCKET } from '@/lib/config'
 import { createAdminClient, createServerClient } from '@/lib/supabase/server'
-
-function hostname(value: string) {
-  const url = new URL(value.includes('://') ? value : `https://${value}`)
-  if (url.protocol !== 'https:') throw new Error('Storage host must use HTTPS')
-  return url.host
-}
+import { deleteStoredFile } from '@/lib/storage-server'
 
 export async function POST() {
   try {
@@ -19,29 +15,30 @@ export async function POST() {
     const email = user.email.toLowerCase()
     const { data: files, error: fileError } = await admin
       .from('shared_files')
-      .select('id, bunny_path')
+      .select('id, bunny_path, file_url, storage_provider, storage_path')
       .eq('sender_email', email)
     if (fileError) throw fileError
 
-    const storageZone = process.env.BUNNY_STORAGE_ZONE
-    const storageHost = process.env.BUNNY_STORAGE_HOST
-    const storagePassword = process.env.BUNNY_STORAGE_PASSWORD
-    if ((files?.some(file => file.bunny_path) ?? false) && (!storageZone || !storageHost || !storagePassword)) {
-      return NextResponse.json({ error: 'File storage is not configured' }, { status: 503 })
+    for (const file of files || []) {
+      await deleteStoredFile(admin, file)
     }
 
-    for (const file of files || []) {
-      if (!file.bunny_path) continue
-      const deleteUrl = `https://${hostname(storageHost!)}/${encodeURIComponent(storageZone!)}${file.bunny_path}`
-      const response = await fetch(deleteUrl, {
-        method: 'DELETE',
-        headers: { AccessKey: storagePassword! },
-        signal: AbortSignal.timeout(15_000),
-      })
-      if (!response.ok && response.status !== 404) {
-        return NextResponse.json({ error: 'One or more stored files could not be deleted' }, { status: 502 })
-      }
+    const { data: pendingUploads, error: pendingLookupError } = await admin
+      .from('pending_uploads')
+      .select('object_path')
+      .eq('user_id', user.id)
+    if (pendingLookupError) throw pendingLookupError
+    for (const upload of pendingUploads || []) {
+      const { error: storageError } = await admin.storage
+        .from(TRANSFER_BUCKET)
+        .remove([upload.object_path])
+      if (storageError) throw storageError
     }
+    const { error: pendingDeleteError } = await admin
+      .from('pending_uploads')
+      .delete()
+      .eq('user_id', user.id)
+    if (pendingDeleteError) throw pendingDeleteError
 
     const fileIds = (files || []).map(file => file.id)
     if (fileIds.length) {

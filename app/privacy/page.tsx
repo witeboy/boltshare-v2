@@ -66,7 +66,7 @@ export default function PrivacyPolicyPage() {
           <section style={sectionStyle}>
             <h2 style={{ fontSize: '1.2rem', margin: '0 0 0.75rem' }}>Retention and deletion</h2>
             <p style={{ color: '#B8B8B8', lineHeight: 1.75, margin: '0 0 0.75rem' }}>
-              Shared files are kept until you delete them or their configured expiry process removes them. Transfer records and download logs are kept while needed to provide transfer history and analytics.
+              Shared files, transfer records, and associated download logs are automatically deleted 48 hours after upload. You can delete an active transfer sooner from your account.
             </p>
             <p style={{ color: '#B8B8B8', lineHeight: 1.75, margin: 0 }}>
               You can permanently delete your account in BoltShare Settings. Successful deletion removes your authentication account, files you own, their active share links, related download logs, and your team memberships. Infrastructure logs or backups may remain temporarily where required for security, legal compliance, or a service provider&apos;s normal backup cycle. See the{' '}
