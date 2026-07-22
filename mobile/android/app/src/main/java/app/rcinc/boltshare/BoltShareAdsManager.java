@@ -229,6 +229,10 @@ final class BoltShareAdsManager {
     }
 
     void onRouteChanged(String path) {
+        mainHandler.post(() -> handleRouteChanged(path));
+    }
+
+    private void handleRouteChanged(String path) {
         String route = routeCategory(path);
         nativeRouteEligible = NATIVE_ROUTES.contains(route) || (BuildConfig.DEBUG && route.isEmpty());
 
@@ -357,7 +361,10 @@ final class BoltShareAdsManager {
     }
 
     void showPrivacyOptions() {
-        UserMessagingPlatform.showPrivacyOptionsForm(activity, formError -> startAdsIfAllowed());
+        mainHandler.post(() -> UserMessagingPlatform.showPrivacyOptionsForm(
+            activity,
+            formError -> startAdsIfAllowed()
+        ));
     }
 
     void onResume() {
