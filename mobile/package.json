@@ -1,0 +1,30 @@
+{
+  "name": "boltshare-mobile",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "sync:android": "cap sync android",
+    "sync:ios": "cap sync ios && node scripts/normalize-ios-package.mjs",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios",
+    "android:debug": "cap sync android && node scripts/run-gradle.mjs assembleDebug",
+    "android:bundle": "cap sync android && node scripts/run-gradle.mjs bundleRelease",
+    "verify": "node scripts/verify.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.4.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.4.2",
+    "@capacitor/ios": "8.4.2",
+    "@capacitor/share": "8.0.1",
+    "@capacitor/status-bar": "8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.4.2",
+    "typescript": "6.0.3"
+  }
+}
