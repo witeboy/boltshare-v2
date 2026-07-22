@@ -110,6 +110,11 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
         : item
       ))
       toast.success(`${file.fileName} download started`)
+      window.setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('boltshare:natural-break', {
+          detail: { event: 'download_completed' },
+        }))
+      }, 700)
     } catch (downloadError) {
       toast.error(downloadError instanceof Error ? downloadError.message : 'Download failed. Please try again.')
     } finally {

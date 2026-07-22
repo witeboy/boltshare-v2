@@ -1,0 +1,19 @@
+{
+  "appId": "com.boltshare.rcinc",
+  "appName": "BoltShare",
+  "webDir": "www",
+  "server": {
+    "url": "https://boltshare.rcinc.app/",
+    "cleartext": false,
+    "allowNavigation": [
+      "boltshare.rcinc.app"
+    ]
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#0D0D0D",
+      "overlaysWebView": false
+    }
+  }
+}
