@@ -29,7 +29,7 @@
     "downloadManager": true,
     "nativeShare": true,
     "deepLinks": true,
-    "ads": false,
+    "ads": true,
     "pushNotifications": false,
     "camera": false,
     "microphone": false,
@@ -39,7 +39,19 @@
     "minSdk": 24,
     "compileSdk": 36,
     "targetSdk": 36,
-    "javaVersion": 21
+    "javaVersion": 21,
+    "adMob": {
+      "appId": "ca-app-pub-9689004813456541~5109392456",
+      "bannerUnitId": "ca-app-pub-9689004813456541/5572426889",
+      "interstitialUnitId": "ca-app-pub-9689004813456541/7543984100",
+      "nativeUnitId": "ca-app-pub-9689004813456541/9016847875",
+      "interstitialLaunchCooldownSeconds": 120,
+      "interstitialMinimumIntervalSeconds": 180,
+      "interstitialRouteThreshold": 3,
+      "interstitialSessionCap": 24,
+      "nativeLaunchCooldownSeconds": 120,
+      "nativeMinimumIntervalSeconds": 600
+    }
   },
   "ios": {
     "deploymentTarget": "15.0"

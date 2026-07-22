@@ -268,6 +268,11 @@ export default function UploadPage() {
       setShareCode(token)
       setExpiresAt(confirmedExpiry)
       toast.success('File uploaded successfully!')
+      window.setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('boltshare:natural-break', {
+          detail: { event: 'upload_completed' },
+        }))
+      }, 700)
     } catch (err) {
       console.error(err)
       toast.error(err instanceof Error ? err.message : 'Upload failed. Please try again.')

@@ -39,6 +39,44 @@ public class BoltShareNativePlugin extends Plugin {
         enqueueDownload(call);
     }
 
+    @PluginMethod
+    public void naturalBreak(PluginCall call) {
+        BoltShareAdsManager ads = adsManager();
+        if (ads != null) ads.onNaturalBreak(call.getString("event"));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void routeChanged(PluginCall call) {
+        BoltShareAdsManager ads = adsManager();
+        if (ads != null) ads.onRouteChanged(call.getString("path"));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void getAdPrivacyStatus(PluginCall call) {
+        BoltShareAdsManager ads = adsManager();
+        JSObject result = new JSObject();
+        result.put("required", ads != null && ads.isPrivacyOptionsRequired());
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void showAdPrivacyOptions(PluginCall call) {
+        BoltShareAdsManager ads = adsManager();
+        if (ads == null) {
+            call.reject("Ad privacy options are not available.");
+            return;
+        }
+        ads.showPrivacyOptions();
+        call.resolve();
+    }
+
+    private BoltShareAdsManager adsManager() {
+        if (!(getActivity() instanceof MainActivity)) return null;
+        return ((MainActivity) getActivity()).getAdsManager();
+    }
+
     @PermissionCallback
     private void storagePermissionCallback(PluginCall call) {
         if (getPermissionState("legacyStorage") == PermissionState.GRANTED) enqueueDownload(call);

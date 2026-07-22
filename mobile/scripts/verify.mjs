@@ -11,7 +11,7 @@ function expect(label, condition) {
   if (!condition) failures.push(label);
 }
 
-const [appConfigText, capConfigText, manifest, gradle, strings, activity, nativePlugin, webClient, bridgeScript, publicBridgeScript, iosInfo, iosEntitlements, iosProject, iosPackage] = await Promise.all([
+const [appConfigText, capConfigText, manifest, gradle, strings, activity, nativePlugin, adsManager, adsConfig, nativeAdLayout, webClient, bridgeScript, publicBridgeScript, privacyPolicy, appAdsText, iosInfo, iosEntitlements, iosProject, iosPackage] = await Promise.all([
   read('app.config.json'),
   read('capacitor.config.json'),
   read('android/app/src/main/AndroidManifest.xml'),
@@ -19,9 +19,14 @@ const [appConfigText, capConfigText, manifest, gradle, strings, activity, native
   read('android/app/src/main/res/values/strings.xml'),
   read('android/app/src/main/java/app/rcinc/boltshare/MainActivity.java'),
   read('android/app/src/main/java/app/rcinc/boltshare/BoltShareNativePlugin.java'),
+  read('android/app/src/main/java/app/rcinc/boltshare/BoltShareAdsManager.java'),
+  read('android/app/src/main/java/app/rcinc/boltshare/AdMobConfig.java'),
+  read('android/app/src/main/res/layout/view_native_ad.xml'),
   read('android/app/src/main/java/app/rcinc/boltshare/BoltShareWebViewClient.java'),
   read('www/remote-bridge.js'),
   read('../public/mobile-bridge.js'),
+  read('../app/privacy/page.tsx'),
+  read('../app/app-ads.txt/route.ts'),
   read('ios/App/App/Info.plist'),
   read('ios/App/App/App.entitlements'),
   read('ios/App/App.xcodeproj/project.pbxproj'),
@@ -55,6 +60,22 @@ expect('Deep links are handled on cold and warm starts', bridgeScript.includes('
 expect('Custom-scheme links are translated to HTTPS', bridgeScript.includes("parsed.protocol === 'boltshare:'"));
 expect('Android back is handled', bridgeScript.includes('backButton') && bridgeScript.includes('minimizeApp'));
 expect('Web-deployed and Android-injected bridges match', bridgeScript.trim() === publicBridgeScript.trim());
+expect('Injected bridge upgrades an older deployed bridge safely', bridgeScript.includes('BRIDGE_VERSION = 2') && bridgeScript.includes('legacyBridgeAlreadyInstalled') && bridgeScript.includes('installAdSignals();'));
+expect('AdMob feature is enabled in app config', appConfig.features.ads === true);
+expect('AdMob application ID matches app config', manifest.includes(`android:value="${appConfig.android.adMob.appId}"`));
+expect('Google Mobile Ads and UMP dependencies exist', gradle.includes('play-services-ads:25.4.0') && gradle.includes('user-messaging-platform:4.0.0'));
+expect('Production banner unit matches app config', adsConfig.includes(appConfig.android.adMob.bannerUnitId));
+expect('Production interstitial unit matches app config', adsConfig.includes(appConfig.android.adMob.interstitialUnitId));
+expect('Production native unit matches app config', adsConfig.includes(appConfig.android.adMob.nativeUnitId));
+expect('Debug builds use Google test ad units', adsConfig.includes('ca-app-pub-3940256099942544/9214589741') && adsConfig.includes('ca-app-pub-3940256099942544/1033173712') && adsConfig.includes('ca-app-pub-3940256099942544/2247696110'));
+expect('Banner is centered in a reserved native slot', adsManager.includes('Gravity.TOP | Gravity.CENTER_HORIZONTAL') && adsManager.includes('AdSize.BANNER'));
+expect('UMP gates ad requests on current consent', adsManager.includes('requestConsentInfoUpdate') && adsManager.includes('loadAndShowConsentFormIfRequired') && adsManager.includes('canRequestAds()'));
+expect('Interstitial natural-break bridge exists', nativePlugin.includes('naturalBreak(PluginCall call)') && bridgeScript.includes('boltshare:natural-break'));
+expect('Interstitial policy controls match app config', adsConfig.includes(`INTERSTITIAL_LAUNCH_COOLDOWN_MS = ${appConfig.android.adMob.interstitialLaunchCooldownSeconds}_000L`) && adsConfig.includes(`INTERSTITIAL_MIN_INTERVAL_MS = ${appConfig.android.adMob.interstitialMinimumIntervalSeconds}_000L`) && adsConfig.includes(`INTERSTITIAL_ROUTE_THRESHOLD = ${appConfig.android.adMob.interstitialRouteThreshold}`) && adsConfig.includes(`INTERSTITIAL_SESSION_CAP = ${appConfig.android.adMob.interstitialSessionCap}`));
+expect('Native ad is clearly labelled and has AdChoices', strings.includes('<string name="native_ad_label">Ad</string>') && nativeAdLayout.includes('android:text="@string/native_ad_label"') && nativeAdLayout.includes('AdChoicesView'));
+expect('Ad privacy choices bridge exists', nativePlugin.includes('showAdPrivacyOptions') && bridgeScript.includes('data-boltshare-ad-privacy'));
+expect('Privacy policy discloses Google AdMob', privacyPolicy.includes('Google AdMob') && privacyPolicy.includes('Advertising data in the Android app'));
+expect('app-ads.txt declares the AdMob publisher', appAdsText.includes('pub-9689004813456541') && appAdsText.includes('f08c47fec0942fa0'));
 expect('iOS bundle ID matches', iosProject.includes(`PRODUCT_BUNDLE_IDENTIFIER = ${appConfig.identity.iosBundleId};`));
 expect('iOS version name matches', iosProject.includes(`MARKETING_VERSION = ${expectedVersion};`));
 expect('iOS build number matches', iosProject.includes(`CURRENT_PROJECT_VERSION = ${expectedCode};`));
@@ -73,7 +94,6 @@ const prohibitedPermissions = [
 for (const permission of prohibitedPermissions) {
   expect(`Manifest omits ${permission}`, !manifest.includes(permission));
 }
-expect('Wrapper omits AdMob', !`${manifest}\n${gradle}`.match(/admob|google\.android\.gms\.ads/i));
 
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.label}`);
 if (failures.length) {

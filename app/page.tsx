@@ -233,7 +233,7 @@ export default function OnboardingPage() {
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginTop: '1.05rem', color: '#73777c', fontSize: '0.72rem' }}>
               <ShieldCheck size={13} color="var(--bs-gold)" />
-              <span>No tracking. No ads. No data mining.</span>
+              <span>Private transfers. No file-content profiling. No data selling.</span>
             </div>
           </footer>
         </div>
@@ -321,7 +321,7 @@ export default function OnboardingPage() {
                   <span className="premium-security-icon"><EyeOff size={15} /></span>
                   <div>
                     <div style={{ fontSize: '0.79rem', fontWeight: 660, color: '#f0f0ec' }}>Private by default</div>
-                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>No advertising profile, tracking pixels or data selling.</p>
+                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>Your shared file contents are not used for ad targeting or sold.</p>
                   </div>
                 </div>
                 <div className="premium-security-row">

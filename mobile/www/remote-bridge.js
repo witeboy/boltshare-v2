@@ -1,8 +1,11 @@
 (function initializeBoltShareMobileBridge() {
   'use strict';
 
-  if (window.__boltShareMobileBridgeInstalled) return;
+  var BRIDGE_VERSION = 2;
+  if (window.__boltShareMobileBridgeVersion === BRIDGE_VERSION) return;
+  var legacyBridgeAlreadyInstalled = Boolean(window.__boltShareMobileBridgeInstalled);
   window.__boltShareMobileBridgeInstalled = true;
+  window.__boltShareMobileBridgeVersion = BRIDGE_VERSION;
 
   var APP_ORIGIN = 'https://boltshare.rcinc.app';
   var Capacitor = window.Capacitor;
@@ -75,6 +78,69 @@
     }, true);
   }
 
+  function installAdSignals() {
+    if (!Native) return;
+
+    var lastReportedPath = '';
+    function refreshPrivacyEntry() {
+      if (typeof Native.getAdPrivacyStatus !== 'function') return;
+      Native.getAdPrivacyStatus().then(function (status) {
+        if (!status || !status.required) return;
+        document.querySelectorAll('[data-boltshare-ad-privacy]').forEach(function (element) {
+          element.style.display = 'flex';
+        });
+      }).catch(function () {});
+    }
+
+    function reportRoute() {
+      var path = window.location.pathname || '/';
+      if (path === lastReportedPath) {
+        refreshPrivacyEntry();
+        return;
+      }
+      lastReportedPath = path;
+      if (typeof Native.routeChanged === 'function') {
+        Native.routeChanged({ path: path }).catch(function () {});
+      }
+      window.setTimeout(refreshPrivacyEntry, 0);
+    }
+
+    function naturalBreak(eventName) {
+      if (typeof Native.naturalBreak !== 'function') return;
+      Native.naturalBreak({ event: String(eventName || '') }).catch(function () {});
+    }
+
+    document.addEventListener('boltshare:natural-break', function (event) {
+      var detail = event && event.detail ? event.detail : {};
+      naturalBreak(detail.event);
+    });
+
+    var originalPushState = window.history.pushState;
+    var originalReplaceState = window.history.replaceState;
+    window.history.pushState = function () {
+      var result = originalPushState.apply(this, arguments);
+      window.setTimeout(reportRoute, 0);
+      return result;
+    };
+    window.history.replaceState = function () {
+      var result = originalReplaceState.apply(this, arguments);
+      window.setTimeout(reportRoute, 0);
+      return result;
+    };
+    window.addEventListener('popstate', reportRoute);
+
+    document.addEventListener('click', function (event) {
+      var target = event.target;
+      var privacyButton = target && target.closest ? target.closest('[data-boltshare-ad-privacy]') : null;
+      if (!privacyButton || typeof Native.showAdPrivacyOptions !== 'function') return;
+      event.preventDefault();
+      Native.showAdPrivacyOptions().catch(function () {});
+    });
+
+    window.BoltShareAds = { naturalBreak: naturalBreak };
+    reportRoute();
+  }
+
   function initializeDeepLinksAndBackButton() {
     if (!App) return;
     if (typeof App.addListener === 'function') {
@@ -93,8 +159,11 @@
     }
   }
 
-  installSafeAreaStyles();
-  installNativeShareFallback();
-  installNativeDownloads();
-  initializeDeepLinksAndBackButton();
+  if (!legacyBridgeAlreadyInstalled) {
+    installSafeAreaStyles();
+    installNativeShareFallback();
+    installNativeDownloads();
+    initializeDeepLinksAndBackButton();
+  }
+  installAdSignals();
 })();
