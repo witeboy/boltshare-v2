@@ -57,6 +57,7 @@ expect('Android back is handled', bridgeScript.includes('backButton') && bridgeS
 expect('Web-deployed and Android-injected bridges match', bridgeScript.trim() === publicBridgeScript.trim());
 expect('iOS bundle ID matches', iosProject.includes(`PRODUCT_BUNDLE_IDENTIFIER = ${appConfig.identity.iosBundleId};`));
 expect('iOS version name matches', iosProject.includes(`MARKETING_VERSION = ${expectedVersion};`));
+expect('iOS build number matches', iosProject.includes(`CURRENT_PROJECT_VERSION = ${expectedCode};`));
 expect('iOS deployment target matches', iosProject.includes(`IPHONEOS_DEPLOYMENT_TARGET = ${appConfig.ios.deploymentTarget};`));
 expect('iOS custom URL scheme exists', iosInfo.includes(`<string>${appConfig.identity.urlScheme}</string>`));
 expect('iOS Universal Link entitlement exists', iosEntitlements.includes(`applinks:${expectedHost}`));
