@@ -1,4 +1,4 @@
-package app.rcinc.boltshare;
+package com.boltshare.rcinc;
 
 import android.os.Bundle;
 import android.content.pm.ApplicationInfo;

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">BoltShare</string>
     <string name="title_activity_main">BoltShare</string>
-    <string name="package_name">app.rcinc.boltshare</string>
+    <string name="package_name">com.boltshare.rcinc</string>
     <string name="custom_url_scheme">boltshare</string>
     <string name="native_ad_label">Ad</string>
 </resources>

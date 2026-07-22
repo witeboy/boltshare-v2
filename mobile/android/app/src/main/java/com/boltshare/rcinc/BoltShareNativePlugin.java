@@ -1,4 +1,4 @@
-package app.rcinc.boltshare;
+package com.boltshare.rcinc;
 
 import android.Manifest;
 import android.app.DownloadManager;

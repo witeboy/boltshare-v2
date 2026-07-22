@@ -1,4 +1,4 @@
-package app.rcinc.boltshare;
+package com.boltshare.rcinc;
 
 final class AdMobConfig {
     static final String APP_ID = "ca-app-pub-9689004813456541~5109392456";

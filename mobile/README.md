@@ -15,7 +15,7 @@ Run `pnpm install`, `pnpm sync:android`, `pnpm verify`, then `pnpm android:debug
 
 Native identity:
 
-- Android application ID: `app.rcinc.boltshare`
+- Android application ID: `com.boltshare.rcinc`
 - iOS bundle ID: `app.rcinc.boltshare`
 - Fallback URL scheme: `boltshare://`
 - Version: `1.1.1` (`versionCode` / build number `2`)

@@ -1,4 +1,4 @@
-package app.rcinc.boltshare;
+package com.boltshare.rcinc;
 
 import android.app.Activity;
 import android.graphics.drawable.Drawable;

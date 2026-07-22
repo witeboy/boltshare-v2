@@ -17,12 +17,12 @@ const [appConfigText, capConfigText, manifest, gradle, strings, activity, native
   read('android/app/src/main/AndroidManifest.xml'),
   read('android/app/build.gradle'),
   read('android/app/src/main/res/values/strings.xml'),
-  read('android/app/src/main/java/app/rcinc/boltshare/MainActivity.java'),
-  read('android/app/src/main/java/app/rcinc/boltshare/BoltShareNativePlugin.java'),
-  read('android/app/src/main/java/app/rcinc/boltshare/BoltShareAdsManager.java'),
-  read('android/app/src/main/java/app/rcinc/boltshare/AdMobConfig.java'),
+  read('android/app/src/main/java/com/boltshare/rcinc/MainActivity.java'),
+  read('android/app/src/main/java/com/boltshare/rcinc/BoltShareNativePlugin.java'),
+  read('android/app/src/main/java/com/boltshare/rcinc/BoltShareAdsManager.java'),
+  read('android/app/src/main/java/com/boltshare/rcinc/AdMobConfig.java'),
   read('android/app/src/main/res/layout/view_native_ad.xml'),
-  read('android/app/src/main/java/app/rcinc/boltshare/BoltShareWebViewClient.java'),
+  read('android/app/src/main/java/com/boltshare/rcinc/BoltShareWebViewClient.java'),
   read('www/remote-bridge.js'),
   read('../public/mobile-bridge.js'),
   read('../app/privacy/page.tsx'),
@@ -44,6 +44,8 @@ expect('Capacitor app ID matches app config', capConfig.appId === expectedId);
 expect('Capacitor URL is HTTPS', new URL(capConfig.server.url).protocol === 'https:');
 expect('Capacitor navigation is restricted to the app host', capConfig.server.allowNavigation.length === 1 && capConfig.server.allowNavigation[0] === expectedHost);
 expect('Android application ID matches', gradle.includes(`applicationId "${expectedId}"`));
+expect('Android namespace matches', gradle.includes(`namespace = "${expectedId}"`));
+expect('Android package-name resource matches', strings.includes(`<string name="package_name">${expectedId}</string>`));
 expect('Android version name matches', gradle.includes(`versionName "${expectedVersion}"`));
 expect('Android version code matches', gradle.includes(`versionCode ${expectedCode}`));
 expect('Java 21 is configured', gradle.includes('JavaVersion.VERSION_21'));

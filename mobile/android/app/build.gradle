@@ -10,13 +10,13 @@ def releaseSigningReady = ['storeFile', 'storePassword', 'keyAlias', 'keyPasswor
 }
 
 android {
-    namespace = "app.rcinc.boltshare"
+    namespace = "com.boltshare.rcinc"
     compileSdk = rootProject.ext.compileSdkVersion
     buildFeatures {
         buildConfig = true
     }
     defaultConfig {
-        applicationId "app.rcinc.boltshare"
+        applicationId "com.boltshare.rcinc"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
