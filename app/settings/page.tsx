@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import {
   Moon, Globe, Clock, Download, HelpCircle,
   Mail, Info, LogOut, Trash2, ChevronRight,
-  Home, ArrowLeftRight, Users, Settings, Loader2
+  Home, ArrowLeftRight, Users, Settings, Loader2, Shield
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -294,6 +294,15 @@ export default function SettingsPage() {
             <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{t.aboutBoltShare}</span>
             <span style={{ fontSize: '0.8rem', color: '#555' }}>{t.version}</span>
           </div>
+          <button
+            type="button"
+            data-boltshare-ad-privacy
+            style={{ display: 'none', width: '100%', alignItems: 'center', padding: '0.875rem 1rem', background: 'transparent', border: 'none', borderTop: '0.5px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}
+          >
+            <Shield size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
+            <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0', textAlign: 'left' }}>Ad privacy choices</span>
+            <ChevronRight size={14} color="#555" />
+          </button>
         </div>
 
         {/* Delete Account — Google Play compliant */}

@@ -11,6 +11,9 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "mobile/android/**/build/**",
+    "mobile/android/.gradle/**",
+    "mobile/android/app/src/main/assets/**",
     "next-env.d.ts",
   ]),
 ]);

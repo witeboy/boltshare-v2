@@ -1,0 +1,91 @@
+workflows:
+  boltshare-ios:
+    name: BoltShare iOS - TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    environment:
+      groups:
+        - appstore_credentials
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.boltshare.rcinc
+      vars:
+        BUNDLE_ID: com.boltshare.rcinc
+        APPLE_TEAM_ID: 7F6X98KNQ6
+        XCODE_PROJECT: mobile/ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+      node: 22
+      xcode: latest
+
+    cache:
+      cache_paths:
+        - $HOME/Library/Caches/org.swift.swiftpm
+        - $HOME/Library/Developer/Xcode/DerivedData
+        - $CM_BUILD_DIR/mobile/node_modules
+        - $HOME/Library/pnpm/store
+
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: codex/capacitor-wrapper
+          include: true
+          source: true
+
+    scripts:
+      - name: Install mobile dependencies
+        script: |
+          set -euo pipefail
+          corepack enable
+          cd "$CM_BUILD_DIR/mobile"
+          pnpm install --frozen-lockfile
+
+      - name: Synchronize Capacitor iOS and artwork
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/mobile"
+          pnpm sync:ios
+
+      - name: Verify native configuration
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/mobile"
+          pnpm verify
+          plutil -lint ios/App/App/Info.plist
+
+      - name: Set Codemagic build number
+        script: |
+          set -euo pipefail
+          BUILD_VERSION=$((PROJECT_BUILD_NUMBER + 2))
+          PROJECT_FILE="$CM_BUILD_DIR/mobile/ios/App/App.xcodeproj/project.pbxproj"
+          sed -E -i '' "s/CURRENT_PROJECT_VERSION = [0-9]+;/CURRENT_PROJECT_VERSION = ${BUILD_VERSION};/g" "$PROJECT_FILE"
+          echo "BoltShare build number: ${BUILD_VERSION}"
+
+      - name: Resolve Swift packages
+        script: |
+          set -euo pipefail
+          xcodebuild -resolvePackageDependencies             -project "$CM_BUILD_DIR/$XCODE_PROJECT"             -scheme "$XCODE_SCHEME"
+
+      - name: Apply App Store signing
+        script: |
+          set -euo pipefail
+          xcode-project use-profiles --project "$CM_BUILD_DIR/$XCODE_PROJECT"
+
+      - name: Build signed IPA
+        script: |
+          set -euo pipefail
+          xcode-project build-ipa             --project "$CM_BUILD_DIR/$XCODE_PROJECT"             --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true

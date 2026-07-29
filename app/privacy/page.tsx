@@ -27,14 +27,14 @@ export default function PrivacyPolicyPage() {
             Privacy &amp; data
           </p>
           <h1 style={{ fontSize: 'clamp(2rem, 7vw, 3.4rem)', lineHeight: 1.05, margin: '0.5rem 0 1rem' }}>Privacy Policy</h1>
-          <p style={{ color: '#A3A3A3', lineHeight: 1.7, margin: 0 }}>Effective July 15, 2026 - Operated by RC Inc.</p>
+          <p style={{ color: '#A3A3A3', lineHeight: 1.7, margin: 0 }}>Effective July 29, 2026 - Operated by RC Inc.</p>
         </header>
 
         <div style={{ display: 'grid', gap: '1rem' }}>
           <section style={sectionStyle}>
             <h2 style={{ fontSize: '1.2rem', margin: '0 0 0.75rem' }}>What this policy covers</h2>
             <p style={{ color: '#B8B8B8', lineHeight: 1.75, margin: 0 }}>
-              This policy applies to the BoltShare Android app and the BoltShare service at boltshare.rcinc.app. BoltShare lets you upload supported files, create private sharing links or transfer codes, and track downloads.
+              This policy applies to the BoltShare Android and iOS apps and the BoltShare service at boltshare.rcinc.app. BoltShare lets you upload supported files, create private sharing links or transfer codes, and track downloads.
             </p>
           </section>
 
@@ -45,6 +45,7 @@ export default function PrivacyPolicyPage() {
               <li><strong style={{ color: '#fff' }}>Files and transfer data:</strong> uploaded file content, file name, type, size, share settings, transfer code, expiry, download limit, and optional recipient email.</li>
               <li><strong style={{ color: '#fff' }}>Team data:</strong> organization name, membership, role, and invited member email addresses.</li>
               <li><strong style={{ color: '#fff' }}>Download and security data:</strong> download time, IP address, user-agent information, and download count.</li>
+              <li><strong style={{ color: '#fff' }}>Advertising data in the mobile apps:</strong> device and advertising identifiers, approximate location derived from IP address, ad interactions, consent choices, crash information, performance information, and diagnostics may be processed by Google Mobile Ads to serve, measure, and protect ads.</li>
               <li><strong style={{ color: '#fff' }}>Support data:</strong> information you include when you contact support.</li>
             </ul>
           </section>
@@ -52,14 +53,14 @@ export default function PrivacyPolicyPage() {
           <section style={sectionStyle}>
             <h2 style={{ fontSize: '1.2rem', margin: '0 0 0.75rem' }}>How we use data</h2>
             <p style={{ color: '#B8B8B8', lineHeight: 1.75, margin: 0 }}>
-              We use this data to authenticate users; upload, store, deliver, and delete files; enforce passwords, expiry dates, and download limits; show transfer history and download analytics; operate team features; send requested transfer emails; prevent abuse; troubleshoot problems; and respond to support requests. We do not sell personal data.
+              We use this data to authenticate users; upload, store, deliver, and delete files; enforce passwords, expiry dates, and download limits; show transfer history and download analytics; operate team features; send requested transfer emails; serve and measure advertising in the Android and iOS apps; prevent abuse; troubleshoot problems; and respond to support requests. We do not sell personal data, and uploaded file contents are not used to personalize advertising.
             </p>
           </section>
 
           <section style={sectionStyle}>
             <h2 style={{ fontSize: '1.2rem', margin: '0 0 0.75rem' }}>Service providers</h2>
             <p style={{ color: '#B8B8B8', lineHeight: 1.75, margin: 0 }}>
-              BoltShare uses service providers to operate the product, including Supabase for authentication and database services, Bunny.net for file storage and delivery, Vercel for application hosting, and Mailjet for requested email delivery. These providers process data only as needed to provide their services and under their own privacy and security terms.
+              BoltShare uses service providers to operate the product, including Supabase for authentication and database services, Bunny.net for file storage and delivery, Vercel for application hosting, Mailjet for requested email delivery, and Google AdMob and its User Messaging Platform for mobile advertising and privacy choices. These providers process data under their own privacy and security terms. Learn how Google uses information from apps that use its services at <a href="https://policies.google.com/technologies/partner-sites" style={{ color: '#F5C518' }}>Google&apos;s partner-sites policy</a>.
             </p>
           </section>
 
@@ -71,6 +72,13 @@ export default function PrivacyPolicyPage() {
             <p style={{ color: '#B8B8B8', lineHeight: 1.75, margin: 0 }}>
               You can permanently delete your account in BoltShare Settings. Successful deletion removes your authentication account, files you own, their active share links, related download logs, and your team memberships. Infrastructure logs or backups may remain temporarily where required for security, legal compliance, or a service provider&apos;s normal backup cycle. See the{' '}
               <Link href="/account-deletion" style={{ color: '#F5C518' }}>Account Deletion page</Link> for instructions.
+            </p>
+          </section>
+
+          <section style={sectionStyle}>
+            <h2 style={{ fontSize: '1.2rem', margin: '0 0 0.75rem' }}>Advertising privacy choices</h2>
+            <p style={{ color: '#B8B8B8', lineHeight: 1.75, margin: 0 }}>
+              Where required, the mobile apps request advertising consent through Google&apos;s User Messaging Platform and provide an Ad privacy choices entry in Settings. On iOS, Apple&apos;s App Tracking Transparency prompt may also ask whether BoltShare can access the device advertising identifier. Declining tracking does not prevent you from using BoltShare. You may receive contextual or non-personalized ads instead.
             </p>
           </section>
 
