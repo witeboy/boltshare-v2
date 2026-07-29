@@ -1,9 +1,6 @@
-import { execFile } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
+import { access, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { promisify } from 'node:util';
 
-const run = promisify(execFile);
 const IOS_BUNDLE_ID = 'com.boltshare.rcinc';
 const APPLE_TEAM_ID = '7F6X98KNQ6';
 const ADMOB_PACKAGE = '        .package(url: "https://github.com/capacitor-community/admob.git", exact: "8.0.0"),';
@@ -68,24 +65,21 @@ async function normalizeXcodeIdentity() {
   await writeFile(projectPath, source, 'utf8');
 }
 
-async function installArtwork() {
-  // Codespaces runs Linux and cannot import AppKit. The installer already
-  // places validated PNG assets. Codemagic/macOS regenerates them from the
-  // approved source outline on every signed build.
-  if (process.platform !== 'darwin') {
-    console.log('Using pre-generated BoltShare iOS artwork on this non-macOS environment.');
-    return;
-  }
+async function verifyArtwork() {
+  const artworkPaths = [
+    'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png',
+    'ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png',
+    'ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-1.png',
+    'ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-2.png',
+  ];
 
-  const scriptPath = resolve('scripts/generate-ios-artwork.swift');
-  const { stdout, stderr } = await run('swift', [scriptPath], {
-    cwd: resolve('.'),
-    maxBuffer: 1024 * 1024,
-  });
-  if (stdout.trim()) console.log(stdout.trim());
-  if (stderr.trim()) console.warn(stderr.trim());
+  await Promise.all(
+    artworkPaths.map((artworkPath) => access(resolve(artworkPath))),
+  );
+
+  console.log('Using committed BoltShare iOS icon and launch artwork.');
 }
 
 await normalizeSwiftPackage();
 await normalizeXcodeIdentity();
-await installArtwork();
+await verifyArtwork();
