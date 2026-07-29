@@ -130,7 +130,15 @@ expect('iOS ATT flow is present', bridgeScript.includes('trackingAuthorizationSt
 expect('iOS ads avoid app-open placement', !bridgeScript.includes('showAppOpenAd') && !bridgeScript.includes('prepareAppOpenAd'));
 expect('iOS banner is limited to non-critical routes', bridgeScript.includes("['/dashboard', '/history', '/team']"));
 expect('iOS interstitial has cooldown and session cap', bridgeScript.includes(`LAUNCH_COOLDOWN_MS = ${appConfig.ios.adMob.interstitialLaunchCooldownSeconds}000`) && bridgeScript.includes(`MIN_INTERSTITIAL_INTERVAL_MS = ${appConfig.ios.adMob.interstitialMinimumIntervalSeconds}000`) && bridgeScript.includes(`SESSION_INTERSTITIAL_CAP = ${appConfig.ios.adMob.interstitialSessionCap}`));
-expect('iOS normalizer preserves AdMob, identity and supplied artwork', iosNormalizer.includes('CapacitorCommunityAdmob') && iosNormalizer.includes(expectedIosId) && iosNormalizer.includes(expectedAppleTeamId) && iosNormalizer.includes('generate-ios-artwork.swift'));
+expect(
+  'iOS normalizer preserves AdMob, identity and committed artwork',
+  iosNormalizer.includes('CapacitorCommunityAdmob')
+    && iosNormalizer.includes(expectedIosId)
+    && iosNormalizer.includes(expectedAppleTeamId)
+    && iosNormalizer.includes('verifyArtwork')
+    && iosNormalizer.includes('AppIcon-512@2x.png')
+    && iosNormalizer.includes('splash-2732x2732.png'),
+);
 expect('Artwork generator produces the required opaque PNG sizes', artworkGenerator.includes('canvasSize: 1024') && artworkGenerator.includes('canvasSize: 2732') && artworkGenerator.includes('hasAlpha: false') && artworkGenerator.includes('AppIcon-512@2x.png'));
 expect('Codemagic workflow builds the registered bundle for TestFlight', codemagic.includes(`bundle_identifier: ${expectedIosId}`) && codemagic.includes('pnpm sync:ios') && codemagic.includes('xcode-project build-ipa') && codemagic.includes('submit_to_testflight: true'));
 
