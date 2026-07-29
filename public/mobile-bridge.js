@@ -1,7 +1,7 @@
 (function initializeBoltShareMobileBridge() {
   'use strict';
 
-  var BRIDGE_VERSION = 2;
+  var BRIDGE_VERSION = 3;
   if (window.__boltShareMobileBridgeVersion === BRIDGE_VERSION) return;
   var legacyBridgeAlreadyInstalled = Boolean(window.__boltShareMobileBridgeInstalled);
   window.__boltShareMobileBridgeInstalled = true;
@@ -10,9 +10,13 @@
   var APP_ORIGIN = 'https://boltshare.rcinc.app';
   var Capacitor = window.Capacitor;
   var plugins = Capacitor && Capacitor.Plugins ? Capacitor.Plugins : {};
+  var platform = Capacitor && typeof Capacitor.getPlatform === 'function'
+    ? Capacitor.getPlatform()
+    : '';
   var App = plugins.App;
   var Share = plugins.Share;
   var Native = plugins.BoltShareNative;
+  var AdMob = plugins.AdMob;
 
   function trustedAppUrl(rawUrl) {
     try {
@@ -43,8 +47,20 @@
     if (document.getElementById('boltshare-native-safe-areas')) return;
     var style = document.createElement('style');
     style.id = 'boltshare-native-safe-areas';
-    style.textContent = 'html{background:#0d0d0d}body{padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}';
+    style.textContent = [
+      'html{background:#0d0d0d}',
+      'body{',
+      'padding-top:env(safe-area-inset-top);',
+      'padding-left:env(safe-area-inset-left);',
+      'padding-right:env(safe-area-inset-right);',
+      'padding-bottom:calc(env(safe-area-inset-bottom) + var(--bs-native-banner-space,0px));',
+      '}',
+    ].join('');
     (document.head || document.documentElement).appendChild(style);
+  }
+
+  function setBannerLayoutVisible(visible) {
+    document.documentElement.style.setProperty('--bs-native-banner-space', visible ? '58px' : '0px');
   }
 
   function installNativeShareFallback() {
@@ -78,12 +94,257 @@
     }, true);
   }
 
+  function createIosAdController() {
+    if (platform !== 'ios' || !AdMob || typeof AdMob.initialize !== 'function') return null;
+
+    var PRODUCTION_BANNER_ID = 'ca-app-pub-9689004813456541/2838951715';
+    var PRODUCTION_INTERSTITIAL_ID = 'ca-app-pub-9689004813456541/9715497040';
+    var TEST_BANNER_ID = 'ca-app-pub-3940256099942544/2435281174';
+    var TEST_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/4411468910';
+    var LAUNCH_COOLDOWN_MS = 120000;
+    var MIN_INTERSTITIAL_INTERVAL_MS = 180000;
+    var SESSION_INTERSTITIAL_CAP = 12;
+    var ELIGIBLE_BANNER_PATHS = ['/dashboard', '/history', '/team'];
+
+    var launchedAt = Date.now();
+    var initialized = false;
+    var initializing = false;
+    var canRequestAds = false;
+    var privacyOptionsRequired = false;
+    var bannerVisible = false;
+    var interstitialReady = false;
+    var interstitialPreparing = false;
+    var lastInterstitialAt = 0;
+    var sessionInterstitialCount = 0;
+    var trackingStatus = 'notDetermined';
+
+    var isTesting = false;
+    try {
+      var current = new URL(window.location.href);
+      if (current.searchParams.get('admobTest') === '1') {
+        window.localStorage.setItem('bs_ios_admob_test', '1');
+        current.searchParams.delete('admobTest');
+        window.history.replaceState(window.history.state, '', current.pathname + current.search + current.hash);
+      }
+      isTesting = window.localStorage.getItem('bs_ios_admob_test') === '1';
+    } catch {}
+
+    function adId(production, testing) {
+      return isTesting ? testing : production;
+    }
+
+    function isBannerPath(path) {
+      return ELIGIBLE_BANNER_PATHS.some(function (eligible) {
+        return path === eligible || path.indexOf(eligible + '/') === 0;
+      });
+    }
+
+    function revealPrivacyEntry(required) {
+      privacyOptionsRequired = Boolean(required);
+      document.querySelectorAll('[data-boltshare-ad-privacy]').forEach(function (element) {
+        element.style.display = privacyOptionsRequired ? 'flex' : 'none';
+      });
+    }
+
+    function refreshPrivacyEntry() {
+      revealPrivacyEntry(privacyOptionsRequired);
+    }
+
+    function prepareInterstitial() {
+      if (!initialized || !canRequestAds || interstitialReady || interstitialPreparing) return Promise.resolve();
+      interstitialPreparing = true;
+      return AdMob.prepareInterstitial({
+        adId: adId(PRODUCTION_INTERSTITIAL_ID, TEST_INTERSTITIAL_ID),
+        isTesting: isTesting,
+        npa: trackingStatus !== 'authorized',
+      }).then(function () {
+        interstitialReady = true;
+      }).catch(function (error) {
+        console.warn('[BoltShare] iOS interstitial failed to prepare', error);
+      }).finally(function () {
+        interstitialPreparing = false;
+      });
+    }
+
+    function hideBanner() {
+      if (!bannerVisible) {
+        setBannerLayoutVisible(false);
+        return Promise.resolve();
+      }
+      bannerVisible = false;
+      setBannerLayoutVisible(false);
+      if (typeof AdMob.hideBanner === 'function') {
+        return AdMob.hideBanner().catch(function () {});
+      }
+      if (typeof AdMob.removeBanner === 'function') {
+        return AdMob.removeBanner().catch(function () {});
+      }
+      return Promise.resolve();
+    }
+
+    function showBannerForPath(path) {
+      if (!initialized || !canRequestAds || !isBannerPath(path)) return hideBanner();
+      if (bannerVisible) {
+        setBannerLayoutVisible(true);
+        return Promise.resolve();
+      }
+
+      return AdMob.showBanner({
+        adId: adId(PRODUCTION_BANNER_ID, TEST_BANNER_ID),
+        adSize: 'ADAPTIVE_BANNER',
+        position: 'BOTTOM_CENTER',
+        margin: 0,
+        isTesting: isTesting,
+        npa: trackingStatus !== 'authorized',
+      }).then(function () {
+        bannerVisible = true;
+        setBannerLayoutVisible(true);
+      }).catch(function (error) {
+        bannerVisible = false;
+        setBannerLayoutVisible(false);
+        console.warn('[BoltShare] iOS banner failed to load', error);
+      });
+    }
+
+    function requestTrackingIfAppropriate() {
+      if (typeof AdMob.trackingAuthorizationStatus !== 'function') return Promise.resolve();
+      return AdMob.trackingAuthorizationStatus().then(function (result) {
+        trackingStatus = result && result.status ? result.status : trackingStatus;
+        if (trackingStatus !== 'notDetermined' || typeof AdMob.requestTrackingAuthorization !== 'function') return;
+        return AdMob.requestTrackingAuthorization().then(function () {
+          return AdMob.trackingAuthorizationStatus();
+        }).then(function (updated) {
+          trackingStatus = updated && updated.status ? updated.status : trackingStatus;
+        });
+      }).catch(function () {});
+    }
+
+    function updateConsent() {
+      if (typeof AdMob.requestConsentInfo !== 'function') {
+        canRequestAds = true;
+        return Promise.resolve();
+      }
+
+      return AdMob.requestConsentInfo().then(function (info) {
+        privacyOptionsRequired = Boolean(
+          info && info.privacyOptionsRequirementStatus === 'REQUIRED'
+        );
+        revealPrivacyEntry(privacyOptionsRequired);
+
+        if (info && !info.canRequestAds && info.isConsentFormAvailable && typeof AdMob.showConsentForm === 'function') {
+          return AdMob.showConsentForm().then(function (updated) {
+            canRequestAds = Boolean(updated && updated.canRequestAds);
+            privacyOptionsRequired = Boolean(
+              updated && updated.privacyOptionsRequirementStatus === 'REQUIRED'
+            );
+            revealPrivacyEntry(privacyOptionsRequired);
+          });
+        }
+
+        canRequestAds = !info || Boolean(info.canRequestAds);
+      });
+    }
+
+    function initialize() {
+      if (initialized || initializing) return Promise.resolve();
+      initializing = true;
+      return AdMob.initialize({
+        initializeForTesting: isTesting,
+        tagForChildDirectedTreatment: false,
+        tagForUnderAgeOfConsent: false,
+        maxAdContentRating: 'ParentalGuidance',
+      }).then(function () {
+        return updateConsent();
+      }).then(function () {
+        return requestTrackingIfAppropriate();
+      }).then(function () {
+        initialized = true;
+        return Promise.all([
+          showBannerForPath(window.location.pathname || '/'),
+          prepareInterstitial(),
+        ]);
+      }).catch(function (error) {
+        console.warn('[BoltShare] iOS AdMob initialization failed', error);
+      }).finally(function () {
+        initializing = false;
+      });
+    }
+
+    function routeChanged(path) {
+      if (!initialized) {
+        initialize().then(function () {
+          showBannerForPath(path);
+        });
+        return;
+      }
+      showBannerForPath(path);
+      prepareInterstitial();
+      refreshPrivacyEntry();
+    }
+
+    function naturalBreak() {
+      if (!initialized || !canRequestAds) return;
+      if (Date.now() - launchedAt < LAUNCH_COOLDOWN_MS) return;
+      if (Date.now() - lastInterstitialAt < MIN_INTERSTITIAL_INTERVAL_MS) return;
+      if (sessionInterstitialCount >= SESSION_INTERSTITIAL_CAP) return;
+
+      if (!interstitialReady) {
+        prepareInterstitial();
+        return;
+      }
+
+      interstitialReady = false;
+      lastInterstitialAt = Date.now();
+      sessionInterstitialCount += 1;
+      hideBanner().then(function () {
+        return AdMob.showInterstitial();
+      }).catch(function (error) {
+        console.warn('[BoltShare] iOS interstitial failed to show', error);
+      }).finally(function () {
+        window.setTimeout(function () {
+          showBannerForPath(window.location.pathname || '/');
+          prepareInterstitial();
+        }, 450);
+      });
+    }
+
+    function showPrivacyOptions() {
+      if (typeof AdMob.showPrivacyOptionsForm !== 'function') return Promise.resolve();
+      return AdMob.showPrivacyOptionsForm().then(function () {
+        return updateConsent();
+      }).then(function () {
+        return showBannerForPath(window.location.pathname || '/');
+      });
+    }
+
+    if (typeof AdMob.addListener === 'function') {
+      AdMob.addListener('interstitialAdDismissed', function () {
+        window.setTimeout(prepareInterstitial, 350);
+      }).catch(function () {});
+      AdMob.addListener('interstitialAdFailedToShow', function () {
+        interstitialReady = false;
+        window.setTimeout(prepareInterstitial, 1000);
+      }).catch(function () {});
+    }
+
+    window.setTimeout(initialize, 600);
+    return {
+      routeChanged: routeChanged,
+      naturalBreak: naturalBreak,
+      refreshPrivacyEntry: refreshPrivacyEntry,
+      showPrivacyOptions: showPrivacyOptions,
+    };
+  }
+
   function installAdSignals() {
-    if (!Native) return;
+    var iosAds = createIosAdController();
+    if (!Native && !iosAds) return;
 
     var lastReportedPath = '';
+
     function refreshPrivacyEntry() {
-      if (typeof Native.getAdPrivacyStatus !== 'function') return;
+      if (iosAds) iosAds.refreshPrivacyEntry();
+      if (!Native || typeof Native.getAdPrivacyStatus !== 'function') return;
       Native.getAdPrivacyStatus().then(function (status) {
         if (!status || !status.required) return;
         document.querySelectorAll('[data-boltshare-ad-privacy]').forEach(function (element) {
@@ -99,15 +360,18 @@
         return;
       }
       lastReportedPath = path;
-      if (typeof Native.routeChanged === 'function') {
+      if (Native && typeof Native.routeChanged === 'function') {
         Native.routeChanged({ path: path }).catch(function () {});
       }
+      if (iosAds) iosAds.routeChanged(path);
       window.setTimeout(refreshPrivacyEntry, 0);
     }
 
     function naturalBreak(eventName) {
-      if (typeof Native.naturalBreak !== 'function') return;
-      Native.naturalBreak({ event: String(eventName || '') }).catch(function () {});
+      if (Native && typeof Native.naturalBreak === 'function') {
+        Native.naturalBreak({ event: String(eventName || '') }).catch(function () {});
+      }
+      if (iosAds) iosAds.naturalBreak(String(eventName || ''));
     }
 
     document.addEventListener('boltshare:natural-break', function (event) {
@@ -132,9 +396,16 @@
     document.addEventListener('click', function (event) {
       var target = event.target;
       var privacyButton = target && target.closest ? target.closest('[data-boltshare-ad-privacy]') : null;
-      if (!privacyButton || typeof Native.showAdPrivacyOptions !== 'function') return;
-      event.preventDefault();
-      Native.showAdPrivacyOptions().catch(function () {});
+      if (!privacyButton) return;
+      if (iosAds) {
+        event.preventDefault();
+        iosAds.showPrivacyOptions().catch(function () {});
+        return;
+      }
+      if (Native && typeof Native.showAdPrivacyOptions === 'function') {
+        event.preventDefault();
+        Native.showAdPrivacyOptions().catch(function () {});
+      }
     });
 
     window.BoltShareAds = { naturalBreak: naturalBreak };

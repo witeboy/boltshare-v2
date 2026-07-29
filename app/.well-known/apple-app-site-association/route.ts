@@ -1,4 +1,5 @@
-const bundleId = 'app.rcinc.boltshare'
+const bundleId = 'com.boltshare.rcinc'
+const defaultTeamId = '7F6X98KNQ6'
 const associatedPaths = [
   '/receive/*',
   '/receive-code',
@@ -12,19 +13,18 @@ const associatedPaths = [
 export const dynamic = 'force-dynamic'
 
 export function GET() {
-  const teamId = (process.env.APPLE_TEAM_ID ?? '').trim().toUpperCase()
-  const validTeamId = /^[A-Z0-9]{10}$/.test(teamId)
+  const configuredTeamId = (process.env.APPLE_TEAM_ID ?? defaultTeamId).trim().toUpperCase()
+  const teamId = /^[A-Z0-9]{10}$/.test(configuredTeamId) ? configuredTeamId : defaultTeamId
 
   return Response.json({
     applinks: {
       apps: [],
-      details: validTeamId
-        ? [{ appID: `${teamId}.${bundleId}`, paths: associatedPaths }]
-        : [],
+      details: [{ appID: `${teamId}.${bundleId}`, paths: associatedPaths }],
     },
   }, {
     headers: {
-      'Cache-Control': validTeamId ? 'public, max-age=300' : 'no-store',
+      'Cache-Control': 'public, max-age=300',
+      'Content-Type': 'application/json',
     },
   })
 }

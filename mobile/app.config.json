@@ -6,7 +6,8 @@
   },
   "identity": {
     "androidPackage": "com.boltshare.rcinc",
-    "iosBundleId": "app.rcinc.boltshare",
+    "iosBundleId": "com.boltshare.rcinc",
+    "appleTeamId": "7F6X98KNQ6",
     "urlScheme": "boltshare"
   },
   "web": {
@@ -54,6 +55,17 @@
     }
   },
   "ios": {
-    "deploymentTarget": "15.0"
+    "deploymentTarget": "15.0",
+    "adMob": {
+      "pluginVersion": "8.0.0",
+      "appId": "ca-app-pub-9689004813456541~8841399077",
+      "bannerUnitId": "ca-app-pub-9689004813456541/2838951715",
+      "interstitialUnitId": "ca-app-pub-9689004813456541/9715497040",
+      "testBannerUnitId": "ca-app-pub-3940256099942544/2435281174",
+      "testInterstitialUnitId": "ca-app-pub-3940256099942544/4411468910",
+      "interstitialLaunchCooldownSeconds": 120,
+      "interstitialMinimumIntervalSeconds": 180,
+      "interstitialSessionCap": 12
+    }
   }
 }
