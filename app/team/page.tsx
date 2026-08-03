@@ -15,7 +15,7 @@ import AppBottomNav from '@/components/boltshare/AppBottomNav'
 const roleColors: Record<string, string> = {
   owner:  '#F5C518',
   admin:  '#60A5FA',
-  member: '#8A8A8A',
+  member: 'var(--bs-text-muted)',
 }
 
 const roleIcons: Record<string, LucideIcon> = {
@@ -189,7 +189,7 @@ export default function TeamPage() {
   const isOwnerOrAdmin = myRole === 'owner' || myRole === 'admin'
 
   if (isLoadingAuth || !isAuthenticated) return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bs-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #F5C518', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -201,27 +201,27 @@ export default function TeamPage() {
 
       {/* Header */}
       <div style={{ padding: '0 0 0.75rem' }}>
-        <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.5rem' }}>Team</h2>
-        <p style={{ color: '#8A8A8A', fontSize: '0.8rem', marginTop: '2px' }}>Manage your organization</p>
+        <h2 style={{ color: 'var(--bs-text)', fontWeight: 700, fontSize: '1.5rem' }}>Team</h2>
+        <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem', marginTop: '2px' }}>Manage your organization</p>
       </div>
 
       <div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#555' }}>
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--bs-text-dim)' }}>
             <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', margin: '0 auto' }} />
           </div>
         ) : (
           <>
             {/* Org card */}
             {org && (
-              <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '16px', padding: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(245,197,24,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Building2 size={22} color="#F5C518" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{org.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#8A8A8A', marginTop: '2px' }}>{members.length} member{members.length !== 1 ? 's' : ''}</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--bs-text)' }}>{org.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--bs-text-muted)', marginTop: '2px' }}>{members.length} member{members.length !== 1 ? 's' : ''}</div>
                 </div>
                 <div style={{ background: 'rgba(245,197,24,0.12)', borderRadius: '20px', padding: '3px 10px', fontSize: '0.7rem', fontWeight: 600, color: '#F5C518' }}>Free</div>
               </div>
@@ -229,10 +229,10 @@ export default function TeamPage() {
 
             {/* Invite */}
             {isOwnerOrAdmin && (
-              <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '1rem', marginBottom: '1rem' }}>
+              <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '16px', padding: '1rem', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <Mail size={15} color="#F5C518" />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff' }}>Invite Team Member</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--bs-text)' }}>Invite Team Member</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
@@ -241,7 +241,7 @@ export default function TeamPage() {
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleInvite()}
-                    style={{ flex: 1, background: '#242424', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: '10px', color: '#fff', padding: '0.75rem 1rem', fontSize: '0.875rem', outline: 'none' }}
+                    style={{ flex: 1, background: 'var(--bs-surface-2)', border: '0.5px solid var(--bs-border-2)', borderRadius: '10px', color: 'var(--bs-text)', padding: '0.75rem 1rem', fontSize: '0.875rem', outline: 'none' }}
                   />
                   <button
                     onClick={handleInvite}
@@ -255,22 +255,22 @@ export default function TeamPage() {
             )}
 
             {/* Members list */}
-            <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}>
-              <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: '#fff', borderBottom: '0.5px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}>
+              <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--bs-text)', borderBottom: '0.5px solid var(--bs-border)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Users size={14} color="#8A8A8A" /> Members
               </div>
               {members.map((m, i) => {
                 const RoleIcon = roleIcons[m.role] || Users
                 const isMe = m.user_email === user?.email
-                const roleColor = roleColors[m.role] || '#8A8A8A'
+                const roleColor = roleColors[m.role] || 'var(--bs-text-muted)'
                 return (
-                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0.875rem 1rem', borderBottom: i < members.length - 1 ? '0.5px solid rgba(255,255,255,0.06)' : 'none' }}>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#242424', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0.875rem 1rem', borderBottom: i < members.length - 1 ? '0.5px solid var(--bs-border)' : 'none' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--bs-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <span style={{ fontSize: '0.875rem', fontWeight: 700, color: roleColor }}>{m.user_email?.[0]?.toUpperCase()}</span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.875rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {m.user_email} {isMe && <span style={{ fontSize: '0.7rem', color: '#555' }}>(you)</span>}
+                      <div style={{ fontSize: '0.875rem', color: 'var(--bs-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {m.user_email} {isMe && <span style={{ fontSize: '0.7rem', color: 'var(--bs-text-dim)' }}>(you)</span>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
                         <RoleIcon size={11} color={roleColor} />

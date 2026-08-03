@@ -3,6 +3,7 @@ import './globals.css'
 import { AuthProvider } from '@/lib/AuthContext'
 import { Toaster } from 'react-hot-toast'
 import { APP_URL } from '@/lib/config'
+import { PreferencesProvider } from '@/lib/PreferencesContext'
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -60,17 +61,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#0D0D0D] text-white antialiased">
-        <AuthProvider>
-          {children}
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
+      <body className="antialiased">
+        <PreferencesProvider>
+          <AuthProvider>
+            {children}
 
           <Toaster
             position="top-center"
             toastOptions={{
               style: {
-                background: '#1A1A1A',
-                color: '#fff',
+                background: 'var(--bs-surface-2)',
+                color: 'var(--bs-text)',
                 border: '0.5px solid rgba(255,255,255,0.1)',
                 borderRadius: '12px',
                 fontSize: '13px',
@@ -91,7 +93,8 @@ export default function RootLayout({
               },
             }}
           />
-        </AuthProvider>
+          </AuthProvider>
+        </PreferencesProvider>
       </body>
     </html>
   )

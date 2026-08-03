@@ -12,6 +12,7 @@ import toast from 'react-hot-toast'
 import { QRCodeSVG } from 'qrcode.react'
 import { TRANSFER_TTL_HOURS } from '@/lib/config'
 import AppBottomNav from '@/components/boltshare/AppBottomNav'
+import { usePreferences } from '@/lib/PreferencesContext'
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return bytes + ' B'
@@ -173,6 +174,7 @@ async function hashPassword(password: string) {
 }
 
 export default function UploadPage() {
+  const { t } = usePreferences()
   const { user, isAuthenticated } = useAuth()
   const router = useRouter()
 
@@ -304,25 +306,25 @@ export default function UploadPage() {
     return (
       <main className="bolt-page bolt-page-with-nav">
         <div className="bolt-page-shell premium-enter">
-        <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: '#8A8A8A', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+        <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--bs-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
           <ArrowLeft size={16} /> Back to dashboard
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
           <CheckCircle size={24} color="#1D9E75" />
-          <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.25rem' }}>Link Created</h2>
+          <h2 style={{ color: 'var(--bs-text)', fontWeight: 700, fontSize: '1.25rem' }}>Link Created</h2>
         </div>
 
         {/* Link display */}
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '1rem', marginBottom: '1rem' }}>
-          <div style={{ fontSize: '0.72rem', color: '#8A8A8A', marginBottom: '6px' }}>Share link</div>
+        <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '14px', padding: '1rem', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--bs-text-muted)', marginBottom: '6px' }}>Share link</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ flex: 1, fontSize: '0.8rem', color: '#F5C518', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shareLink}</div>
-            <button onClick={copyLink} style={{ background: '#242424', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', flexShrink: 0 }}>
+            <button onClick={copyLink} style={{ background: 'var(--bs-surface-2)', border: 'none', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', color: 'var(--bs-text)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', flexShrink: 0 }}>
               <Copy size={14} /> Copy
             </button>
           </div>
-          <div style={{ marginTop: '10px', fontSize: '1.25rem', fontWeight: 700, color: '#fff', letterSpacing: '0.1em' }}>{shareCode}</div>
+          <div style={{ marginTop: '10px', fontSize: '1.25rem', fontWeight: 700, color: 'var(--bs-text)', letterSpacing: '0.1em' }}>{shareCode}</div>
         </div>
 
         {/* Action buttons */}
@@ -332,36 +334,36 @@ export default function UploadPage() {
             { icon: Share2, label: 'Share Link',  action: shareLinkWithDevice },
             { icon: QrCode, label: 'QR Code',     action: () => setShowQr(value => !value) },
           ].map(({ icon: Icon, label, action }) => (
-            <button key={label} onClick={action} style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '0.875rem 0.5rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <button key={label} onClick={action} style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '12px', padding: '0.875rem 0.5rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
               <Icon size={20} color="#F5C518" />
-              <span style={{ fontSize: '0.7rem', color: '#B0B0B0' }}>{label}</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--bs-text-2)' }}>{label}</span>
             </button>
           ))}
         </div>
 
         {showQr && (
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '1rem', width: 'fit-content', margin: '0 auto 1.25rem' }}>
+          <div style={{ background: 'var(--bs-text)', borderRadius: '16px', padding: '1rem', width: 'fit-content', margin: '0 auto 1.25rem' }}>
             <QRCodeSVG value={shareLink} size={196} level="M" />
           </div>
         )}
 
         {/* Link settings summary */}
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
-          <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: '#fff', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>Link Settings</div>
+        <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
+          <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--bs-text)', borderBottom: '0.5px solid var(--bs-border)' }}>{t('upload.linkSettings')}</div>
           {[
-            { icon: Clock,    label: 'Automatic deletion', value: `${TRANSFER_TTL_HOURS} hours` },
-            { icon: Download, label: 'Max Downloads',    value: maxDownloads ? maxDownloads + 'x' : 'Unlimited' },
-            { icon: Lock,     label: 'Password Protect', value: usePassword ? 'On' : 'Off' },
+            { icon: Clock,    label: t('upload.autoDelete'), value: `${TRANSFER_TTL_HOURS} ${t('settings.hours')}` },
+            { icon: Download, label: t('upload.maxDownloads'), value: maxDownloads ? maxDownloads + 'x' : t('upload.unlimited') },
+            { icon: Lock,     label: t('upload.password'), value: usePassword ? 'On' : 'Off' },
           ].map(({ icon: Icon, label, value }, i, arr) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(255,255,255,0.06)' : 'none' }}>
+            <div key={label} style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: i < arr.length - 1 ? '0.5px solid var(--bs-border)' : 'none' }}>
               <Icon size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{label}</span>
-              <span style={{ fontSize: '0.875rem', color: '#fff' }}>{value}</span>
+              <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--bs-text-2)' }}>{label}</span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--bs-text)' }}>{value}</span>
             </div>
           ))}
         </div>
 
-        <p style={{ color: '#8A8A8A', fontSize: '0.78rem', lineHeight: 1.5, margin: '-0.5rem 0 1.25rem', textAlign: 'center' }}>
+        <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.78rem', lineHeight: 1.5, margin: '-0.5rem 0 1.25rem', textAlign: 'center' }}>
           The files and their transfer records will be permanently deleted {expiresAt ? `on ${new Date(expiresAt).toLocaleString()}` : `after ${TRANSFER_TTL_HOURS} hours`}.
         </p>
 
@@ -381,25 +383,25 @@ export default function UploadPage() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: '#8A8A8A', cursor: 'pointer' }}>
+        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: 'var(--bs-text-muted)', cursor: 'pointer' }}>
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.25rem' }}>Send a File</h2>
-          <p style={{ color: '#8A8A8A', fontSize: '0.8rem', marginTop: '1px' }}>Upload any file and get a shareable link</p>
+          <h2 style={{ color: 'var(--bs-text)', fontWeight: 700, fontSize: '1.25rem' }}>{t('upload.title')}</h2>
+          <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem', marginTop: '1px' }}>{t('upload.subtitle')}</p>
         </div>
       </div>
 
       {/* Trust badges */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         {[
-          { icon: Shield, label: 'Secure links', color: '#1D9E75' },
-          { icon: Zap,    label: 'Direct storage', color: '#F5C518' },
-          { icon: CheckCircle, label: 'Auto-expiring', color: '#60A5FA' },
+          { icon: Shield, label: t('upload.secure'), color: '#1D9E75' },
+          { icon: Zap,    label: t('upload.direct'), color: '#F5C518' },
+          { icon: CheckCircle, label: t('upload.expiring'), color: '#60A5FA' },
         ].map(({ icon: Icon, label, color }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '4px 10px' }}>
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '20px', padding: '4px 10px' }}>
             <Icon size={12} color={color} />
-            <span style={{ fontSize: '0.72rem', color: '#B0B0B0', fontWeight: 500 }}>{label}</span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--bs-text-2)', fontWeight: 500 }}>{label}</span>
           </div>
         ))}
       </div>
@@ -423,25 +425,25 @@ export default function UploadPage() {
         <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(245,197,24,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', filter: 'drop-shadow(0 0 16px rgba(245,197,24,0.4))' }}>
           <CloudUpload size={30} color="#F5C518" />
         </div>
-        <p style={{ color: '#fff', fontWeight: 600, fontSize: '1rem', marginBottom: '4px' }}>
-          Drag &amp; drop files here
+        <p style={{ color: 'var(--bs-text)', fontWeight: 600, fontSize: '1rem', marginBottom: '4px' }}>
+          {t('upload.drop')}
         </p>
-        <p style={{ color: '#8A8A8A', fontSize: '0.8rem', marginBottom: '4px' }}>or click to browse</p>
-        <p style={{ color: '#777', fontSize: '0.75rem' }}>Resumable multipart transfers · files up to approximately 5 TB</p>
+        <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem', marginBottom: '4px' }}>{t('upload.browse')}</p>
+        <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.75rem' }}>{t('upload.capacity')}</p>
         <input ref={inputRef} type="file" multiple onChange={onPick} style={{ display: 'none' }} />
       </div>
 
       {/* Selected files */}
       {files.length > 0 && (
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1rem' }}>
+        <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1rem' }}>
           {files.map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0.75rem 1rem', borderBottom: i < files.length - 1 ? '0.5px solid rgba(255,255,255,0.06)' : 'none' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0.75rem 1rem', borderBottom: i < files.length - 1 ? '0.5px solid var(--bs-border)' : 'none' }}>
               <File size={16} color="#F5C518" />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.8rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
-                <div style={{ fontSize: '0.7rem', color: '#8A8A8A' }}>{formatBytes(f.size)}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--bs-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--bs-text-muted)' }}>{formatBytes(f.size)}</div>
               </div>
-              <button onClick={() => removeFile(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', flexShrink: 0 }}>
+              <button onClick={() => removeFile(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bs-text-dim)', flexShrink: 0 }}>
                 <X size={16} />
               </button>
             </div>
@@ -451,38 +453,38 @@ export default function UploadPage() {
 
       {/* Upload progress */}
       {uploading && (
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '1rem', marginBottom: '1rem' }}>
+        <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '14px', padding: '1rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.8rem', color: '#fff' }}>Uploading...</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--bs-text)' }}>{t('upload.uploading')}</span>
             <span style={{ fontSize: '0.8rem', color: '#F5C518' }}>{progress}%</span>
           </div>
-          <div style={{ background: '#242424', borderRadius: '4px', height: '6px', overflow: 'hidden' }}>
+          <div style={{ background: 'var(--bs-surface-2)', borderRadius: '4px', height: '6px', overflow: 'hidden' }}>
             <div style={{ background: '#F5C518', height: '100%', width: progress + '%', borderRadius: '4px', transition: 'width 0.3s' }} />
           </div>
         </div>
       )}
 
       {/* Link settings */}
-      <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
-        <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: '#fff', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>Link Settings</div>
+      <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
+        <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--bs-text)', borderBottom: '0.5px solid var(--bs-border)' }}>{t('upload.linkSettings')}</div>
 
         {/* Expiry */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid var(--bs-border)' }}>
           <Clock size={16} color="#8A8A8A" style={{ marginRight: '10px' }} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '0.875rem', color: '#B0B0B0' }}>Automatic deletion</div>
-            <div style={{ color: '#666', fontSize: '0.7rem', marginTop: '2px' }}>File and transfer record are permanently removed</div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--bs-text-2)' }}>{t('upload.autoDelete')}</div>
+            <div style={{ color: 'var(--bs-text-muted)', fontSize: '0.7rem', marginTop: '2px' }}>{t('upload.removal')}</div>
           </div>
-          <span style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 600 }}>{TRANSFER_TTL_HOURS} hours</span>
+          <span style={{ color: 'var(--bs-text)', fontSize: '0.8rem', fontWeight: 600 }}>{TRANSFER_TTL_HOURS} hours</span>
         </div>
 
         {/* Max downloads */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid var(--bs-border)' }}>
           <Download size={16} color="#8A8A8A" style={{ marginRight: '10px' }} />
-          <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>Max Downloads</span>
+          <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--bs-text-2)' }}>{t('upload.maxDownloads')}</span>
           <select value={maxDownloads ?? ''} onChange={e => setMaxDownloads(e.target.value ? Number(e.target.value) : null)}
-            style={{ background: '#242424', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: '8px', color: '#fff', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', outline: 'none' }}>
-            <option value="">Unlimited</option>
+            style={{ background: 'var(--bs-surface-2)', border: '0.5px solid var(--bs-border-2)', borderRadius: '8px', color: 'var(--bs-text)', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', outline: 'none' }}>
+            <option value="">{t('upload.unlimited')}</option>
             <option value={1}>1x</option>
             <option value={5}>5x</option>
             <option value={10}>10x</option>
@@ -494,12 +496,12 @@ export default function UploadPage() {
         <div style={{ padding: '0.875rem 1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <Lock size={16} color="#8A8A8A" style={{ marginRight: '10px' }} />
-            <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>Password Protect</span>
+            <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--bs-text-2)' }}>{t('upload.password')}</span>
             <div
               onClick={() => setUsePassword(!usePassword)}
               style={{ width: '44px', height: '24px', borderRadius: '12px', background: usePassword ? '#F5C518' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
             >
-              <div style={{ position: 'absolute', top: '2px', left: usePassword ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+              <div style={{ position: 'absolute', top: '2px', left: usePassword ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bs-text)', transition: 'left 0.2s' }} />
             </div>
           </div>
           {usePassword && (
@@ -508,7 +510,7 @@ export default function UploadPage() {
               placeholder="Enter password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              style={{ marginTop: '10px', width: '100%', background: '#242424', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: '8px', color: '#fff', padding: '0.7rem 1rem', fontSize: '0.875rem', outline: 'none' }}
+              style={{ marginTop: '10px', width: '100%', background: 'var(--bs-surface-2)', border: '0.5px solid var(--bs-border-2)', borderRadius: '8px', color: 'var(--bs-text)', padding: '0.7rem 1rem', fontSize: '0.875rem', outline: 'none' }}
             />
           )}
         </div>
@@ -518,9 +520,9 @@ export default function UploadPage() {
       <button
         onClick={handleUpload}
         disabled={uploading || files.length === 0}
-        style={{ width: '100%', background: uploading || files.length === 0 ? '#555' : '#F5C518', color: uploading || files.length === 0 ? '#888' : '#000', border: 'none', borderRadius: '14px', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: uploading || files.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.15s' }}
+        style={{ width: '100%', background: uploading || files.length === 0 ? 'var(--bs-text-dim)' : '#F5C518', color: uploading || files.length === 0 ? '#888' : '#000', border: 'none', borderRadius: '14px', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: uploading || files.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.15s' }}
       >
-        {uploading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Uploading...</> : <><CloudUpload size={18} /> Send File</>}
+        {uploading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> {t('upload.uploading')}</> : <><CloudUpload size={18} /> {t('upload.send')}</>}
       </button>
 
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

@@ -126,53 +126,53 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bs-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div aria-label="Loading shared files" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #F5C518', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   if (error) return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bs-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
       <div style={{ textAlign: 'center', maxWidth: '360px' }}>
         <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(226,75,74,0.12)', border: '0.5px solid rgba(226,75,74,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
           <AlertTriangle size={28} color="#E24B4A" />
         </div>
-        <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.15rem', marginBottom: '8px' }}>Link unavailable</h2>
-        <p style={{ color: '#8A8A8A', fontSize: '0.875rem', marginBottom: '1.5rem' }}>{error}</p>
+        <h2 style={{ color: 'var(--bs-text)', fontWeight: 700, fontSize: '1.15rem', marginBottom: '8px' }}>Link unavailable</h2>
+        <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>{error}</p>
         <Link href="/" style={{ color: '#F5C518', fontSize: '0.875rem' }}>Go to BoltShare</Link>
       </div>
     </div>
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bs-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
       <main style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '2rem' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#F5C518', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Zap size={16} color="#000" fill="#000" />
           </div>
-          <span style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>BoltShare Receiver</span>
+          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--bs-text)' }}>BoltShare Receiver</span>
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(245,197,24,0.08)', border: '0.5px solid rgba(245,197,24,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', filter: 'drop-shadow(0 0 24px rgba(245,197,24,0.3))' }}>
             <Shield size={52} color="#F5C518" fill="rgba(245,197,24,0.15)" />
           </div>
-          <h1 style={{ color: '#fff', fontWeight: 700, fontSize: '1.25rem', marginTop: '1rem' }}>
+          <h1 style={{ color: 'var(--bs-text)', fontWeight: 700, fontSize: '1.25rem', marginTop: '1rem' }}>
             You received {files.length === 1 ? 'a file' : `${files.length} files`}
           </h1>
-          <p style={{ color: '#8A8A8A', fontSize: '0.875rem', marginTop: '4px' }}>Shared securely via BoltShare</p>
+          <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.875rem', marginTop: '4px' }}>Shared securely via BoltShare</p>
         </div>
 
         {pwLocked && (
-          <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '1rem', marginBottom: '1rem' }}>
+          <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '14px', padding: '1rem', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
               <Lock size={16} color="#F5C518" />
-              <span style={{ fontSize: '0.875rem', color: '#fff', fontWeight: 500 }}>Password required for this share</span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--bs-text)', fontWeight: 500 }}>Password required for this share</span>
             </div>
             <input type="password" placeholder="Enter password" value={password} onChange={event => setPassword(event.target.value)}
-              style={{ width: '100%', background: '#242424', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: '10px', color: '#fff', padding: '0.8rem 1rem', fontSize: '0.9rem', outline: 'none' }} />
+              style={{ width: '100%', background: 'var(--bs-surface-2)', border: '0.5px solid var(--bs-border-2)', borderRadius: '10px', color: 'var(--bs-text)', padding: '0.8rem 1rem', fontSize: '0.9rem', outline: 'none' }} />
           </div>
         )}
 
@@ -180,19 +180,19 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
           {files.map(file => {
             const isDownloading = downloadingId === file.id
             return (
-              <article key={file.id} style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '1.125rem' }}>
+              <article key={file.id} style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '18px', padding: '1.125rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#242424', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--bs-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {fileIcon(file.fileType)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.fileName}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#8A8A8A', marginTop: '3px' }}>{formatBytes(file.fileSize)}</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--bs-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.fileName}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--bs-text-muted)', marginTop: '3px' }}>{formatBytes(file.fileSize)}</div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', paddingTop: '12px', borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', paddingTop: '12px', borderTop: '0.5px solid var(--bs-border)' }}>
                   <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#1D9E75', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.72rem', color: '#8A8A8A' }}>Expires {new Date(file.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--bs-text-muted)' }}>Expires {new Date(file.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <button onClick={() => handleDownload(file)} disabled={Boolean(downloadingId)}
                   style={{ width: '100%', background: isDownloading ? '#B8960F' : '#F5C518', color: '#000', border: 'none', borderRadius: '12px', padding: '0.8rem', fontWeight: 700, fontSize: '0.9rem', cursor: downloadingId ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px' }}>
@@ -204,7 +204,7 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
         </section>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '1rem' }}>
-          {['Secure link', 'Direct storage', 'Auto-expiring'].map(label => <span key={label} style={{ fontSize: '0.68rem', color: '#555' }}>{label}</span>)}
+          {['Secure link', 'Direct storage', 'Auto-expiring'].map(label => <span key={label} style={{ fontSize: '0.68rem', color: 'var(--bs-text-dim)' }}>{label}</span>)}
         </div>
       </main>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

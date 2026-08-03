@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
   --bs-bg: #080a0c;
   --bs-bg-soft: #0d1013;
   --bs-surface: #111418;
@@ -26,6 +27,34 @@
   --bs-r-xl: 28px;
   --bs-shadow: 0 20px 70px rgba(0, 0, 0, 0.42);
   --bs-shadow-gold: 0 18px 50px rgba(255, 193, 0, 0.16);
+  --bs-app-background: radial-gradient(circle at 82% 11%, rgba(255, 205, 0, 0.025), transparent 20rem), linear-gradient(180deg, #050606 0%, #080909 54%, #050606 100%);
+  --bs-body-background: radial-gradient(circle at 50% -15%, rgba(255, 201, 22, 0.055), transparent 32rem), linear-gradient(180deg, #090b0e 0%, #07090b 100%);
+  --bs-nav-background: rgba(5, 6, 6, 0.94);
+  --bs-card-background: linear-gradient(180deg, #111212 0%, #0c0d0d 100%);
+  --bs-card-background-soft: linear-gradient(180deg, rgba(10,11,11,0.94), rgba(7,8,8,0.98));
+  --bs-field-background: #191a1a;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bs-bg: #f3f0e8;
+  --bs-bg-soft: #ebe7dc;
+  --bs-surface: #fffdf8;
+  --bs-surface-2: #f7f3e9;
+  --bs-surface-3: #ece7db;
+  --bs-text: #181713;
+  --bs-text-2: #4f4c45;
+  --bs-text-muted: #777269;
+  --bs-text-dim: #9a9488;
+  --bs-border: rgba(28, 25, 18, 0.09);
+  --bs-border-2: rgba(28, 25, 18, 0.16);
+  --bs-shadow: 0 20px 60px rgba(75, 63, 32, 0.12);
+  --bs-app-background: radial-gradient(circle at 82% 8%, rgba(255, 201, 22, 0.16), transparent 19rem), linear-gradient(180deg, #fbf9f3 0%, #f1ede3 100%);
+  --bs-body-background: radial-gradient(circle at 50% -15%, rgba(255, 201, 22, 0.14), transparent 30rem), linear-gradient(180deg, #fbf9f3 0%, #f1ede3 100%);
+  --bs-nav-background: rgba(255, 253, 248, 0.92);
+  --bs-card-background: linear-gradient(180deg, #fffefa 0%, #f6f2e8 100%);
+  --bs-card-background-soft: linear-gradient(180deg, rgba(255,255,252,0.96), rgba(246,242,232,0.98));
+  --bs-field-background: #eee9dd;
 }
 
 *, *::before, *::after {
@@ -44,9 +73,7 @@ html {
 body {
   min-height: 100%;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 50% -15%, rgba(255, 201, 22, 0.055), transparent 32rem),
-    linear-gradient(180deg, #090b0e 0%, #07090b 100%);
+  background: var(--bs-body-background);
   color: var(--bs-text);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -710,10 +737,8 @@ p { line-height: 1.62; color: var(--bs-text-2); }
   position: relative;
   min-height: 100svh;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 82% 11%, rgba(255, 205, 0, 0.025), transparent 20rem),
-    linear-gradient(180deg, #050606 0%, #080909 54%, #050606 100%);
-  color: #f7f7f7;
+  background: var(--bs-app-background);
+  color: var(--bs-text);
 }
 
 .bolt-page-with-nav { padding-bottom: calc(7.6rem + env(safe-area-inset-bottom)); }
@@ -1153,3 +1178,202 @@ p { line-height: 1.62; color: var(--bs-text-2); }
   .bolt-stat-card span { font-size: 0.67rem; }
   .bolt-nav-item { font-size: 0.59rem; }
 }
+
+/* Compact mobile-first dashboard and accessible preference surfaces */
+.bolt-dashboard-shell {
+  position: relative;
+  padding: max(0.85rem, env(safe-area-inset-top)) 1rem calc(6.6rem + env(safe-area-inset-bottom));
+}
+.bolt-dashboard-toolbar { display: flex; min-height: 2.35rem; justify-content: flex-end; }
+.bolt-dashboard-settings {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-color: var(--bs-border-2);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--bs-surface) 88%, transparent);
+  color: var(--bs-text-muted);
+  text-decoration: none;
+}
+.bolt-dashboard-settings:hover { border-color: rgba(255, 201, 22, 0.48); color: var(--bs-gold-2); }
+.bolt-dashboard-hero {
+  grid-template-columns: minmax(0, 0.92fr) minmax(10.5rem, 1.08fr);
+  gap: 0.65rem;
+  margin-top: 0.7rem;
+}
+.bolt-welcome-kicker { color: var(--bs-text); font-size: clamp(0.94rem, 4vw, 1.1rem); font-weight: 640; }
+.bolt-welcome-name {
+  margin-top: 0.15rem;
+  color: var(--bs-text);
+  font-size: clamp(1.72rem, 7.2vw, 2.2rem);
+  overflow-wrap: anywhere;
+  line-height: 0.98;
+}
+.bolt-system-status { gap: 0.45rem; margin-top: 0.72rem; color: var(--bs-text-muted); font-size: clamp(0.69rem, 2.8vw, 0.79rem); line-height: 1.2; }
+.bolt-system-status > span { width: 0.52rem; height: 0.52rem; }
+.bolt-hero-actions { gap: 0.42rem; }
+.bolt-action-button {
+  min-height: 3.2rem;
+  gap: 0.42rem;
+  border-color: var(--bs-border-2);
+  border-radius: 0.86rem;
+  padding: 0 0.55rem;
+  font-size: clamp(0.76rem, 3vw, 0.9rem);
+  font-weight: 640;
+}
+.bolt-action-button svg { width: 1.24rem; height: 1.24rem; }
+.bolt-action-button-dark { background: var(--bs-card-background); color: var(--bs-text); }
+.bolt-stat-grid { gap: 0.4rem; margin-top: 1.3rem; }
+.bolt-stat-card {
+  min-height: 6.05rem;
+  border-color: var(--bs-border);
+  border-radius: 0.86rem;
+  background: var(--bs-card-background);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.bolt-stat-card svg { width: 1.42rem; height: 1.42rem; }
+.bolt-stat-card strong { margin-top: 0.55rem; color: var(--bs-text); font-size: clamp(1.3rem, 5.6vw, 1.65rem); }
+.bolt-stat-card span { margin-top: 0.48rem; color: var(--bs-text-muted); font-size: clamp(0.61rem, 2.55vw, 0.72rem); }
+.bolt-send-panel {
+  min-height: 8.65rem;
+  border-width: 1.5px;
+  border-radius: 1.15rem;
+  margin-top: 1rem;
+  background: radial-gradient(circle at 50% 30%, rgba(255,212,0,0.07), transparent 38%), color-mix(in srgb, var(--bs-surface) 74%, transparent);
+}
+.bolt-send-panel-icon { width: 2.85rem; height: 2.85rem; border-radius: 0.78rem; }
+.bolt-send-panel-icon svg { width: 1.85rem; height: 1.85rem; }
+.bolt-send-panel h2 { margin-top: 0.35rem; color: var(--bs-text); font-size: clamp(1.18rem, 5vw, 1.45rem); }
+.bolt-send-panel p { margin-top: 0.38rem; color: var(--bs-text-muted); font-size: clamp(0.76rem, 3.2vw, 0.88rem); }
+.bolt-send-panel > span:last-child { margin-top: 0.4rem; color: var(--bs-text-muted); font-size: clamp(0.68rem, 2.85vw, 0.8rem); }
+.bolt-recent-section { margin-top: 1.55rem; }
+.bolt-section-heading { margin-bottom: 0.65rem; }
+.bolt-section-heading h2 { color: var(--bs-text); font-size: clamp(1.08rem, 4.5vw, 1.28rem); }
+.bolt-section-heading a { font-size: clamp(0.76rem, 3.1vw, 0.88rem); }
+.bolt-activity-list { gap: 0.38rem; }
+.bolt-activity-row,
+.bolt-activity-empty { min-height: 4.45rem; border-color: var(--bs-border); border-radius: 0.9rem; background: var(--bs-card-background-soft); }
+.bolt-activity-row { gap: 0.7rem; padding: 0.65rem 0.8rem; }
+.bolt-document-icon { width: 2.25rem; height: 2.6rem; }
+.bolt-document-icon svg { width: 1.2rem; height: 1.2rem; }
+.bolt-activity-copy strong { color: var(--bs-text); font-size: clamp(0.8rem, 3.4vw, 0.93rem); }
+.bolt-activity-copy span { margin-top: 0.2rem; color: var(--bs-text-muted); font-size: clamp(0.65rem, 2.7vw, 0.74rem); }
+.bolt-activity-row time { color: var(--bs-text-muted); font-size: clamp(0.63rem, 2.6vw, 0.72rem); }
+.bolt-activity-chevron { width: 1rem; height: 1rem; }
+.bolt-bottom-nav { border-color: var(--bs-border); background: var(--bs-nav-background); }
+.bolt-bottom-nav-inner { min-height: 5.35rem; padding-top: 0.48rem; }
+.bolt-nav-item { min-height: 3.7rem; gap: 0.27rem; color: var(--bs-text-muted); font-size: clamp(0.58rem, 2.45vw, 0.72rem); }
+.bolt-nav-item svg { width: 1.35rem; height: 1.35rem; }
+.bolt-nav-create { width: 4.15rem; height: 4.15rem; transform: translateY(-0.95rem); }
+.bolt-nav-create:hover { transform: translateY(-1.02rem) scale(1.015); }
+.bolt-nav-create:active { transform: translateY(-0.85rem) scale(0.985); }
+.bolt-nav-create svg { width: 2rem; height: 2rem; }
+
+.bolt-settings-shell { width: min(100%, 620px); }
+.bolt-settings-header { margin-bottom: 1.1rem; }
+.bolt-settings-header h1 { color: var(--bs-text); font-size: 1.55rem; }
+.bolt-settings-header p { max-width: 34rem; margin-top: 0.3rem; color: var(--bs-text-muted); font-size: 0.8rem; line-height: 1.45; }
+.bolt-settings-account,
+.bolt-settings-section {
+  border: 1px solid var(--bs-border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--bs-surface) 94%, transparent);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.055);
+}
+.bolt-settings-account { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; padding: 0.8rem; }
+.bolt-settings-avatar { display: grid; width: 2.55rem; height: 2.55rem; flex: 0 0 auto; place-items: center; border-radius: 50%; background: var(--bs-gold); color: #0a0906; font-weight: 760; }
+.bolt-settings-account-copy { min-width: 0; }
+.bolt-settings-account-copy strong,
+.bolt-settings-account-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bolt-settings-account-copy strong { color: var(--bs-text); font-size: 0.82rem; }
+.bolt-settings-account-copy small { margin-top: 0.18rem; color: var(--bs-text-muted); font-size: 0.68rem; }
+.bolt-settings-section { margin-bottom: 0.8rem; overflow: hidden; padding: 0.9rem; }
+.bolt-settings-section-heading { display: flex; align-items: flex-start; gap: 0.65rem; margin-bottom: 0.8rem; }
+.bolt-settings-section-heading.compact { margin-bottom: 0.55rem; }
+.bolt-settings-heading-icon { display: grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border-radius: 0.65rem; background: var(--bs-gold-muted); color: var(--bs-gold-2); }
+.bolt-settings-heading-icon svg { width: 1rem; height: 1rem; }
+.bolt-settings-section-heading strong,
+.bolt-settings-section-heading small { display: block; }
+.bolt-settings-section-heading strong { color: var(--bs-text); font-size: 0.86rem; }
+.bolt-settings-section-heading small { margin-top: 0.18rem; color: var(--bs-text-muted); font-size: 0.68rem; line-height: 1.4; }
+.bolt-theme-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.bolt-theme-picker button,
+.bolt-language-grid button {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--bs-border);
+  border-radius: 0.78rem;
+  background: var(--bs-surface-2);
+  color: var(--bs-text-2);
+  cursor: pointer;
+}
+.bolt-theme-picker button { min-height: 3rem; gap: 0.5rem; padding: 0 0.7rem; font-size: 0.78rem; font-weight: 650; }
+.bolt-theme-picker button svg { width: 1rem; height: 1rem; }
+.bolt-theme-picker button svg:last-child,
+.bolt-language-grid button svg { margin-left: auto; color: var(--bs-gold-2); }
+.bolt-theme-picker button.is-active,
+.bolt-language-grid button.is-active { border-color: rgba(255,193,0,0.58); background: var(--bs-gold-muted); color: var(--bs-text); }
+.bolt-language-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+.bolt-language-grid button { min-height: 2.85rem; gap: 0.5rem; padding: 0 0.65rem; }
+.bolt-language-grid button > span { font-size: 1rem; }
+.bolt-language-grid button strong { color: inherit; font-size: 0.72rem; }
+.bolt-language-grid button svg { width: 0.9rem; height: 0.9rem; }
+.bolt-settings-list { overflow: hidden; border: 1px solid var(--bs-border); border-radius: 0.78rem; }
+.bolt-settings-row { display: flex; min-height: 2.9rem; align-items: center; gap: 0.55rem; border-bottom: 1px solid var(--bs-border); padding: 0 0.7rem; color: var(--bs-text-2); text-decoration: none; }
+.bolt-settings-row:last-child { border-bottom: 0; }
+.bolt-settings-row > svg { width: 0.95rem; height: 0.95rem; flex: 0 0 auto; color: var(--bs-text-muted); }
+.bolt-settings-row > span { min-width: 0; flex: 1; font-size: 0.74rem; }
+.bolt-settings-row > strong { color: var(--bs-text); font-size: 0.7rem; }
+.bolt-settings-row > small { color: var(--bs-text-dim); font-size: 0.66rem; }
+.bolt-settings-row select { border: 1px solid var(--bs-border-2); border-radius: 0.55rem; background: var(--bs-field-background); padding: 0.28rem 0.5rem; color: var(--bs-text); font-size: 0.68rem; }
+.bolt-settings-section.is-danger { border-color: rgba(226,75,74,0.25); background: color-mix(in srgb, #e24b4a 6%, var(--bs-surface)); }
+.bolt-settings-section.is-danger .bolt-settings-heading-icon { background: rgba(226,75,74,0.12); color: #e24b4a; }
+.bolt-delete-summary { border-radius: 0.72rem; background: rgba(226,75,74,0.07); padding: 0.7rem; color: var(--bs-text-muted); }
+.bolt-delete-summary > strong { color: #d95050; font-size: 0.7rem; }
+.bolt-delete-summary ul { margin: 0.45rem 0 0 1rem; font-size: 0.66rem; line-height: 1.55; }
+.bolt-danger-button,
+.bolt-logout-button { display: flex; width: 100%; min-height: 2.85rem; align-items: center; justify-content: center; gap: 0.45rem; border: 1px solid rgba(226,75,74,0.25); border-radius: 0.75rem; margin-top: 0.7rem; background: rgba(226,75,74,0.1); color: #df5554; cursor: pointer; font-size: 0.76rem; font-weight: 680; }
+.bolt-danger-button svg,
+.bolt-logout-button svg { width: 1rem; height: 1rem; }
+.bolt-delete-confirm { margin-top: 0.7rem; }
+.bolt-delete-confirm label { display: block; margin-bottom: 0.4rem; color: #d95050; font-size: 0.7rem; text-align: center; }
+.bolt-delete-confirm input { width: 100%; border: 1px solid rgba(226,75,74,0.32); border-radius: 0.7rem; background: var(--bs-field-background); padding: 0.7rem; color: var(--bs-text); font-family: monospace; text-align: center; }
+.bolt-delete-confirm > div { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
+.bolt-delete-confirm button { min-height: 2.6rem; border: 0; border-radius: 0.65rem; background: var(--bs-surface-3); color: var(--bs-text-2); cursor: pointer; font-size: 0.7rem; }
+.bolt-delete-confirm button.is-danger { background: #d95050; color: white; }
+.bolt-delete-confirm button:disabled { cursor: not-allowed; opacity: 0.45; }
+.bolt-logout-button { margin: 0 0 0.8rem; }
+.bolt-delete-email-link { display: block; color: var(--bs-text-dim); font-size: 0.68rem; text-align: center; }
+
+:root[data-theme='light'] .premium-page { background: var(--bs-app-background); color: var(--bs-text); }
+:root[data-theme='light'] .bolt-icon-button,
+:root[data-theme='light'] .premium-icon-button { border-color: var(--bs-border-2); background: var(--bs-surface); color: var(--bs-text); }
+:root[data-theme='light'] .bolt-history-row,
+:root[data-theme='light'] .bolt-list-empty { border-color: var(--bs-border); background: var(--bs-card-background); }
+:root[data-theme='light'] .bolt-history-copy strong { color: var(--bs-text); }
+
+@media (max-width: 430px) {
+  .bolt-dashboard-shell { padding-right: 1rem; padding-left: 1rem; }
+  .bolt-dashboard-hero { grid-template-columns: minmax(0, 0.92fr) minmax(10.5rem, 1.08fr); gap: 0.55rem; margin-top: 0.65rem; }
+  .bolt-hero-actions { width: auto; margin-top: 0; }
+  .bolt-action-button { min-height: 3.2rem; }
+  .bolt-stat-card { min-height: 6.05rem; }
+  .bolt-activity-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+}
+@media (max-width: 360px) {
+  .bolt-dashboard-hero { grid-template-columns: minmax(0, 1fr) minmax(9.5rem, 1.02fr); }
+  .bolt-action-button { gap: 0.3rem; padding: 0 0.38rem; font-size: 0.74rem; }
+  .bolt-action-button svg { width: 1.08rem; height: 1.08rem; }
+}
+@media (max-width: 330px) {
+  .bolt-action-button svg { display: none; }
+  .bolt-language-grid { grid-template-columns: 1fr; }
+}
+
+:root[dir='rtl'] body { text-align: right; }
+:root[dir='rtl'] .bolt-activity-chevron,
+:root[dir='rtl'] .bolt-settings-row > svg:last-child { transform: scaleX(-1); }
+:root[dir='rtl'] .bolt-theme-picker button svg:last-child,
+:root[dir='rtl'] .bolt-language-grid button svg { margin-right: auto; margin-left: 0; }
+:root[dir='rtl'] .bolt-delete-summary ul { margin-right: 1rem; margin-left: 0; }
+
+/* Preference surfaces intentionally share these global responsive tokens. */

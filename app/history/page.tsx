@@ -11,15 +11,17 @@ import FileTypeIcon from '@/components/boltshare/FileTypeIcon'
 import { useAuth } from '@/lib/AuthContext'
 import { getReceivedTransfers, type ReceivedTransfer } from '@/lib/received-history'
 import { createClient } from '@/lib/supabase/client'
+import { usePreferences } from '@/lib/PreferencesContext'
 
-function timeAgo(dateString: string, currentTime: number) {
+function timeAgo(dateString: string, currentTime: number, locale: string) {
   const difference = Math.max(0, currentTime - new Date(dateString).getTime())
   const minutes = Math.floor(difference / 60_000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
+  const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' })
+  if (minutes < 1) return relative.format(0, 'minute')
+  if (minutes < 60) return relative.format(-minutes, 'minute')
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
+  if (hours < 24) return relative.format(-hours, 'hour')
+  return relative.format(-Math.floor(hours / 24), 'day')
 }
 
 function formatBytes(bytes: number) {
@@ -53,6 +55,7 @@ type ActivityItem =
 
 export default function HistoryPage() {
   const { user, isAuthenticated, isLoadingAuth } = useAuth()
+  const { language, t } = usePreferences()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [files, setFiles] = useState<SharedFile[]>([])
@@ -132,27 +135,29 @@ export default function HistoryPage() {
   return (
     <main className="bolt-page bolt-page-with-nav">
       <div className="bolt-page-shell premium-enter">
-        <AppHeader title="Activity" />
+        <AppHeader title={t('history.activity')} />
         <section className="bolt-subpage-intro">
-          <h1>Transfer history</h1>
-          <p>{files.length + received.length} total sent and received files</p>
+          <h1>{t('history.title')}</h1>
+          <p>{files.length + received.length} {t('history.total')}</p>
         </section>
         <div className="bolt-tabs" role="tablist" aria-label="Transfer type">
           {(['all', 'sent', 'received'] as Tab[]).map(value => (
             <button key={value} type="button" role="tab" aria-selected={tab === value}
-              className={tab === value ? 'is-active' : ''} onClick={() => setTab(value)}>{value}</button>
+              className={tab === value ? 'is-active' : ''} onClick={() => setTab(value)}>
+              {value === 'all' ? t('history.all') : value === 'sent' ? t('dashboard.sent') : t('dashboard.received')}
+            </button>
           ))}
         </div>
 
         <section className="bolt-history-list" aria-live="polite">
           {loading ? (
-            <div className="bolt-list-empty">Loading activity…</div>
+            <div className="bolt-list-empty">{t('history.loading')}</div>
           ) : items.length === 0 ? (
             <div className="bolt-list-empty">
               <Send size={30} aria-hidden="true" />
-              <strong>No transfers yet</strong>
-              <span>Your sent and received files will appear here.</span>
-              <Link href="/upload">Send your first file</Link>
+              <strong>{t('history.empty')}</strong>
+              <span>{t('history.emptyDescription')}</span>
+              <Link href="/upload">{t('history.first')}</Link>
             </div>
           ) : items.map(item => {
             if (item.kind === 'received') {
@@ -163,10 +168,10 @@ export default function HistoryPage() {
                     <span className="bolt-history-icon"><FileTypeIcon type={file.fileType} /></span>
                     <span className="bolt-history-copy">
                       <strong>{file.fileName}</strong>
-                      <span>{formatBytes(file.fileSize)} • Downloaded • {timeAgo(file.downloadedAt, currentTime)}</span>
+                      <span>{formatBytes(file.fileSize)} • {t('dashboard.downloaded')} • {timeAgo(file.downloadedAt, currentTime, language)}</span>
                     </span>
                   </Link>
-                  <span className="bolt-history-status is-received"><Download aria-hidden="true" />Received</span>
+                  <span className="bolt-history-status is-received"><Download aria-hidden="true" />{t('dashboard.received')}</span>
                 </article>
               )
             }
@@ -179,7 +184,7 @@ export default function HistoryPage() {
                   <span className="bolt-history-icon"><FileTypeIcon type={file.file_type} /></span>
                   <span className="bolt-history-copy">
                     <strong>{file.file_name}</strong>
-                    <span>{formatBytes(file.file_size)} • {expired ? 'Expired' : 'Sent'} • {timeAgo(file.created_at, currentTime)}</span>
+                    <span>{formatBytes(file.file_size)} • {expired ? t('history.expired') : t('dashboard.sent')} • {timeAgo(file.created_at, currentTime, language)}</span>
                   </span>
                 </Link>
                 <div className="bolt-history-actions">

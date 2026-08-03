@@ -10,6 +10,7 @@ import StatCard from '@/components/boltshare/StatCard'
 import { useAuth } from '@/lib/AuthContext'
 import { getReceivedTransfers, type ReceivedTransfer } from '@/lib/received-history'
 import { createClient } from '@/lib/supabase/client'
+import { usePreferences } from '@/lib/PreferencesContext'
 
 interface SharedFile {
   id: string
@@ -41,14 +42,15 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-function timeAgo(dateString: string, currentTime: number) {
+function timeAgo(dateString: string, currentTime: number, locale: string) {
   const difference = Math.max(0, currentTime - new Date(dateString).getTime())
   const minutes = Math.floor(difference / 60_000)
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes}m ago`
+  const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' })
+  if (minutes < 1) return relative.format(0, 'minute')
+  if (minutes < 60) return relative.format(-minutes, 'minute')
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
+  if (hours < 24) return relative.format(-hours, 'hour')
+  return relative.format(-Math.floor(hours / 24), 'day')
 }
 
 function isFileActive(file: SharedFile, currentTime: number) {
@@ -65,6 +67,7 @@ function LoadingScreen() {
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoadingAuth } = useAuth()
+  const { language, t } = usePreferences()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [files, setFiles] = useState<SharedFile[]>([])
@@ -155,25 +158,23 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 2)
   const systemStatusLabel = systemHealthy === null
-    ? 'Checking system status'
+    ? t('dashboard.checking')
     : systemHealthy
-      ? 'All systems active'
-      : 'Service status unavailable'
+      ? t('dashboard.active')
+      : t('dashboard.unavailable')
 
   return (
     <main className="bolt-dashboard-page">
       <div className="bolt-dashboard-shell premium-enter">
-        <header className="bolt-dashboard-header">
-          <span aria-hidden="true" />
-          <span className="bolt-dashboard-brand">BoltShare</span>
-          <Link href="/settings" className="bolt-dashboard-settings" aria-label="Open settings">
+        <div className="bolt-dashboard-toolbar">
+          <Link href="/settings" className="bolt-dashboard-settings" aria-label={t('settings.title')}>
             <Settings aria-hidden="true" />
           </Link>
-        </header>
+        </div>
 
         <section className="bolt-dashboard-hero" aria-labelledby="dashboard-welcome">
           <div>
-            <p className="bolt-welcome-kicker">Welcome,</p>
+            <p className="bolt-welcome-kicker">{t('dashboard.welcome')}</p>
             <h1 id="dashboard-welcome" className="bolt-welcome-name">{firstName}</h1>
             <div className={`bolt-system-status${systemHealthy === null ? ' is-checking' : systemHealthy ? '' : ' is-degraded'}`}>
               <span aria-hidden="true" />
@@ -183,46 +184,46 @@ export default function DashboardPage() {
 
           <div className="bolt-hero-actions">
             <Link href="/upload" className="bolt-action-button bolt-action-button-dark">
-              <Plus aria-hidden="true" /> Send
+              <Plus aria-hidden="true" /> {t('nav.send')}
             </Link>
             <Link href="/receive-code" className="bolt-action-button bolt-action-button-gold">
-              <Download aria-hidden="true" /> Receive
+              <Download aria-hidden="true" /> {t('nav.receive')}
             </Link>
           </div>
         </section>
 
         <section className="bolt-stat-grid" aria-label="Transfer statistics">
-          <StatCard icon={Send} value={files.length} label="Sent" />
-          <StatCard icon={Download} value={receivedFiles.length} label="Received" />
-          <StatCard icon={Eye} value={totalDownloads} label="Downloads" />
-          <StatCard icon={Bell} value={alertCount} label="Alerts" />
+          <StatCard icon={Send} value={files.length} label={t('dashboard.sent')} />
+          <StatCard icon={Download} value={receivedFiles.length} label={t('dashboard.received')} />
+          <StatCard icon={Eye} value={totalDownloads} label={t('dashboard.downloads')} />
+          <StatCard icon={Bell} value={alertCount} label={t('dashboard.alerts')} />
         </section>
 
         <Link href="/upload" className="bolt-send-panel" aria-label="Send a file">
           <span className="bolt-send-panel-icon"><Upload aria-hidden="true" /></span>
-          <h2>Send a File</h2>
-          <p>Drag &amp; drop or tap to upload</p>
-          <span>Large files • Encrypted • Private</span>
+          <h2>{t('dashboard.sendFile')}</h2>
+          <p>{t('dashboard.drop')}</p>
+          <span>{t('dashboard.capacity')}</span>
         </Link>
 
         <section className="bolt-recent-section" aria-labelledby="recent-activity-heading">
           <div className="bolt-section-heading">
-            <h2 id="recent-activity-heading">Recent Activity</h2>
-            <Link href="/history">View all</Link>
+            <h2 id="recent-activity-heading">{t('dashboard.recent')}</h2>
+            <Link href="/history">{t('dashboard.viewAll')}</Link>
           </div>
           <div className="bolt-activity-list">
             {loading ? (
-              <div className="bolt-activity-empty">Loading activity…</div>
+              <div className="bolt-activity-empty">{t('dashboard.loading')}</div>
             ) : recentActivity.length === 0 ? (
-              <div className="bolt-activity-empty">Your sent and received files will appear here.</div>
+              <div className="bolt-activity-empty">{t('dashboard.empty')}</div>
             ) : recentActivity.map(item => (
               <Link key={`${item.kind}-${item.id}`} href={item.href} className="bolt-activity-row">
                 <span className="bolt-document-icon"><FileTypeIcon type={item.type} size={24} /></span>
                 <span className="bolt-activity-copy">
                   <strong>{item.name}</strong>
-                  <span>{formatBytes(item.size)} • {item.kind === 'sent' ? 'Sent' : 'Downloaded'}</span>
+                  <span>{formatBytes(item.size)} • {item.kind === 'sent' ? t('dashboard.sent') : t('dashboard.downloaded')}</span>
                 </span>
-                <time dateTime={item.date}>{timeAgo(item.date, currentTime)}</time>
+                <time dateTime={item.date}>{timeAgo(item.date, currentTime, language)}</time>
                 <ChevronRight className="bolt-activity-chevron" aria-hidden="true" />
               </Link>
             ))}

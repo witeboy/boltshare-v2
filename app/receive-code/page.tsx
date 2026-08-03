@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import { Zap, ArrowRight, QrCode, Shield, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import AppBottomNav from '@/components/boltshare/AppBottomNav'
+import { usePreferences } from '@/lib/PreferencesContext'
 
 export default function ReceiveCodePage() {
+  const { t } = usePreferences()
   const [code, setCode]       = useState('')
   const [loading, setLoading] = useState(false)
   const router                = useRouter()
@@ -41,15 +43,15 @@ export default function ReceiveCodePage() {
           <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#F5C518', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Zap size={16} color="#000" fill="#000" />
           </div>
-          <span style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>BoltShare Receiver</span>
+          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--bs-text)' }}>{t('receive.receiver')}</span>
         </div>
 
         {/* Phones + Shield illustration */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
             {/* Left phone */}
-            <div style={{ width: '52px', height: '88px', borderRadius: '10px', background: '#1A1A1A', border: '1.5px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <div style={{ width: '28px', height: '48px', borderRadius: '4px', background: '#242424' }} />
+            <div style={{ width: '52px', height: '88px', borderRadius: '10px', background: 'var(--bs-surface)', border: '1.5px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: '28px', height: '48px', borderRadius: '4px', background: 'var(--bs-surface-2)' }} />
             </div>
 
             {/* Shield center */}
@@ -65,36 +67,36 @@ export default function ReceiveCodePage() {
             </div>
 
             {/* Right phone */}
-            <div style={{ width: '52px', height: '88px', borderRadius: '10px', background: '#1A1A1A', border: '1.5px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <div style={{ width: '28px', height: '48px', borderRadius: '4px', background: '#242424' }} />
+            <div style={{ width: '52px', height: '88px', borderRadius: '10px', background: 'var(--bs-surface)', border: '1.5px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: '28px', height: '48px', borderRadius: '4px', background: 'var(--bs-surface-2)' }} />
             </div>
           </div>
 
-          <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.3rem', marginTop: '1.25rem' }}>Receive a File</h2>
-          <p style={{ color: '#8A8A8A', fontSize: '0.85rem', marginTop: '4px' }}>Ask the sender for their code or QR</p>
+          <h2 style={{ color: 'var(--bs-text)', fontWeight: 700, fontSize: '1.3rem', marginTop: '1.25rem' }}>{t('receive.title')}</h2>
+          <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>{t('receive.subtitle')}</p>
         </div>
 
         {/* Card */}
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '1.5rem' }}>
+        <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '20px', padding: '1.5rem' }}>
 
-          <label style={{ fontSize: '0.8rem', fontWeight: 500, color: '#B0B0B0', display: 'block', marginBottom: '8px' }}>
-            Enter Code
+          <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--bs-text-2)', display: 'block', marginBottom: '8px' }}>
+            {t('receive.enter')}
           </label>
 
           {/* Code input */}
           <input
             type="text"
-            placeholder="e.g. ABC12345"
+            placeholder={t('receive.placeholder')}
             value={code}
             onChange={e => setCode(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && handleContinue()}
             maxLength={10}
             style={{
               width: '100%',
-              background: '#242424',
-              border: '0.5px solid rgba(255,255,255,0.14)',
+              background: 'var(--bs-surface-2)',
+              border: '0.5px solid var(--bs-border-2)',
               borderRadius: '12px',
-              color: '#fff',
+              color: 'var(--bs-text)',
               padding: '0.9rem 1rem',
               fontSize: '1.1rem',
               fontWeight: 600,
@@ -114,28 +116,28 @@ export default function ReceiveCodePage() {
           >
             {loading
               ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-              : <><ArrowRight size={18} /> Continue</>
+              : <><ArrowRight size={18} /> {t('receive.continue')}</>
             }
           </button>
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
-            <div style={{ flex: 1, height: '0.5px', background: 'rgba(255,255,255,0.08)' }} />
-            <span style={{ fontSize: '0.75rem', color: '#555' }}>or</span>
-            <div style={{ flex: 1, height: '0.5px', background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{ flex: 1, height: '0.5px', background: 'var(--bs-border)' }} />
+            <span style={{ fontSize: '0.75rem', color: 'var(--bs-text-dim)' }}>or</span>
+            <div style={{ flex: 1, height: '0.5px', background: 'var(--bs-border)' }} />
           </div>
 
           {/* QR button */}
           <button
             onClick={() => toast('QR scanner coming soon')}
-            style={{ width: '100%', background: 'transparent', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: '12px', padding: '0.9rem', fontWeight: 500, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#B0B0B0' }}
+            style={{ width: '100%', background: 'transparent', border: '0.5px solid var(--bs-border-2)', borderRadius: '12px', padding: '0.9rem', fontWeight: 500, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--bs-text-2)' }}
           >
-            <QrCode size={18} color="#8A8A8A" /> Scan QR Code
+            <QrCode size={18} color="var(--bs-text-muted)" /> {t('receive.scan')}
           </button>
         </div>
 
         {/* App link */}
-        <p style={{ textAlign: 'center', color: '#555', fontSize: '0.75rem', marginTop: '1.25rem' }}>
+        <p style={{ textAlign: 'center', color: 'var(--bs-text-dim)', fontSize: '0.75rem', marginTop: '1.25rem' }}>
           Don&apos;t have the app yet?{' '}
           <a href="https://boltshare.rcinc.app" style={{ color: '#F5C518', textDecoration: 'none' }}>
             boltshare.rcinc.app

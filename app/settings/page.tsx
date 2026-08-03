@@ -2,387 +2,171 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/AuthContext'
 import {
-  Moon, Globe, Clock, Download, HelpCircle,
-  Mail, Info, LogOut, Trash2, ChevronRight, Users, Loader2
+  Check, ChevronRight, Clock, Download, Globe, HelpCircle, Info, Loader2,
+  LogOut, Mail, Moon, Sun, Trash2, Users,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { TRANSFER_TTL_HOURS } from '@/lib/config'
 import AppBottomNav from '@/components/boltshare/AppBottomNav'
-
-// ── Translations ───────────────────────────
-const translations: Record<string, Record<string, string>> = {
-  en: {
-    settings:        'Settings',
-    general:         'General',
-    appearance:      'Appearance',
-    dark:            'Dark',
-    language:        'Language',
-    defaultExpiry:   'Default Expiry',
-    defaultMaxDl:    'Default Max Downloads',
-    unlimited:       'Unlimited',
-    support:         'Support',
-    helpCenter:      'Help Center',
-    contactUs:       'Contact Us',
-    aboutBoltShare:  'About BoltShare',
-    version:         'Version 2.0.0',
-    dangerZone:      'Danger Zone',
-    deleteAccount:   'Delete Account',
-    deleteDesc:      'Permanently delete your account and all associated data.',
-    logout:          'Logout',
-    confirmDelete:   'Type DELETE to confirm',
-    confirmBtn:      'Confirm Delete',
-    cancel:          'Cancel',
-    deleting:        'Deleting...',
-    deleteWarning:   'This action is permanent and cannot be undone.',
-    willDelete:      'The following will be permanently deleted:',
-    d1: 'Your account and profile',
-    d2: 'All files you have shared',
-    d3: 'All download logs and analytics',
-    d4: 'Your organization (if you are the sole owner)',
-    d5: 'All active share links (recipients lose access immediately)',
-    hours:           'hours',
-    hour:            'hour',
-    days:            'days',
-  },
-  fr: {
-    settings:        'Paramètres',
-    general:         'Général',
-    appearance:      'Apparence',
-    dark:            'Sombre',
-    language:        'Langue',
-    defaultExpiry:   'Expiration par défaut',
-    defaultMaxDl:    'Téléchargements max',
-    unlimited:       'Illimité',
-    support:         'Assistance',
-    helpCenter:      "Centre d'aide",
-    contactUs:       "Contactez-nous",
-    aboutBoltShare:  'À propos de BoltShare',
-    version:         'Version 2.0.0',
-    dangerZone:      'Zone dangereuse',
-    deleteAccount:   'Supprimer le compte',
-    deleteDesc:      'Supprimez définitivement votre compte et toutes les données associées.',
-    logout:          'Déconnexion',
-    confirmDelete:   'Tapez DELETE pour confirmer',
-    confirmBtn:      'Confirmer la suppression',
-    cancel:          'Annuler',
-    deleting:        'Suppression...',
-    deleteWarning:   'Cette action est permanente et irréversible.',
-    willDelete:      'Les éléments suivants seront supprimés:',
-    d1: 'Votre compte et profil',
-    d2: 'Tous les fichiers partagés',
-    d3: 'Tous les journaux et analyses',
-    d4: 'Votre organisation (si vous êtes le seul propriétaire)',
-    d5: 'Tous les liens de partage actifs',
-    hours: 'heures', hour: 'heure', days: 'jours',
-  },
-  es: {
-    settings:        'Configuración',
-    general:         'General',
-    appearance:      'Apariencia',
-    dark:            'Oscuro',
-    language:        'Idioma',
-    defaultExpiry:   'Expiración predeterminada',
-    defaultMaxDl:    'Descargas máximas',
-    unlimited:       'Ilimitado',
-    support:         'Soporte',
-    helpCenter:      'Centro de ayuda',
-    contactUs:       'Contáctenos',
-    aboutBoltShare:  'Acerca de BoltShare',
-    version:         'Versión 2.0.0',
-    dangerZone:      'Zona peligrosa',
-    deleteAccount:   'Eliminar cuenta',
-    deleteDesc:      'Elimina permanentemente tu cuenta y todos los datos asociados.',
-    logout:          'Cerrar sesión',
-    confirmDelete:   'Escribe DELETE para confirmar',
-    confirmBtn:      'Confirmar eliminación',
-    cancel:          'Cancelar',
-    deleting:        'Eliminando...',
-    deleteWarning:   'Esta acción es permanente e irreversible.',
-    willDelete:      'Lo siguiente se eliminará permanentemente:',
-    d1: 'Tu cuenta y perfil',
-    d2: 'Todos los archivos compartidos',
-    d3: 'Todos los registros y análisis',
-    d4: 'Tu organización (si eres el único propietario)',
-    d5: 'Todos los enlaces de uso compartido activos',
-    hours: 'horas', hour: 'hora', days: 'días',
-  },
-  pt: {
-    settings:        'Configurações',
-    general:         'Geral',
-    appearance:      'Aparência',
-    dark:            'Escuro',
-    language:        'Idioma',
-    defaultExpiry:   'Expiração padrão',
-    defaultMaxDl:    'Downloads máximos',
-    unlimited:       'Ilimitado',
-    support:         'Suporte',
-    helpCenter:      'Central de ajuda',
-    contactUs:       'Fale conosco',
-    aboutBoltShare:  'Sobre o BoltShare',
-    version:         'Versão 2.0.0',
-    dangerZone:      'Zona de perigo',
-    deleteAccount:   'Excluir conta',
-    deleteDesc:      'Exclua permanentemente sua conta e todos os dados associados.',
-    logout:          'Sair',
-    confirmDelete:   'Digite DELETE para confirmar',
-    confirmBtn:      'Confirmar exclusão',
-    cancel:          'Cancelar',
-    deleting:        'Excluindo...',
-    deleteWarning:   'Esta ação é permanente e não pode ser desfeita.',
-    willDelete:      'O seguinte será excluído permanentemente:',
-    d1: 'Sua conta e perfil',
-    d2: 'Todos os arquivos compartilhados',
-    d3: 'Todos os registros e análises',
-    d4: 'Sua organização (se você for o único proprietário)',
-    d5: 'Todos os links de compartilhamento ativos',
-    hours: 'horas', hour: 'hora', days: 'dias',
-  },
-}
-
-const languages = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'pt', label: 'Português', flag: '🇧🇷' },
-]
+import { TRANSFER_TTL_HOURS } from '@/lib/config'
+import { useAuth } from '@/lib/AuthContext'
+import { appLanguages, usePreferences } from '@/lib/PreferencesContext'
 
 export default function SettingsPage() {
   const { user, isAuthenticated, logout } = useAuth()
-  const router  = useRouter()
+  const { language, setLanguage, setTheme, t, theme } = usePreferences()
+  const router = useRouter()
+  const [defaultMaxDownloads, setDefaultMaxDownloads] = useState<number | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleteText, setDeleteText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
-  const [lang, setLang]               = useState('en')
-  const [showLangPicker, setShowLangPicker] = useState(false)
-  const [defaultMaxDl, setDefaultMaxDl]     = useState<number | null>(null)
-  const [deleteConfirm, setDeleteConfirm]   = useState(false)
-  const [deleteText, setDeleteText]         = useState('')
-  const [deleting, setDeleting]             = useState(false)
-  const [loggingOut, setLoggingOut]         = useState(false)
-
-  const t = translations[lang] || translations.en
-
-  const handleLogout = async () => {
+  async function handleLogout() {
     setLoggingOut(true)
     await logout()
     router.push('/')
   }
 
-  const handleDeleteAccount = async () => {
+  async function handleDeleteAccount() {
     if (deleteText !== 'DELETE') return
     setDeleting(true)
     try {
       const response = await fetch('/api/delete-account', { method: 'POST' })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Account deletion failed')
-
       await logout()
       toast.success('Account deleted successfully')
-    router.push('/')
-    } catch (err) {
-      console.error(err)
-      toast.error(err instanceof Error ? err.message : 'Failed to delete account. Please try again.')
+      router.push('/')
+    } catch (error) {
+      console.error(error)
+      toast.error(error instanceof Error ? error.message : 'Failed to delete account. Please try again.')
       setDeleting(false)
     }
   }
 
-  const selectedLang = languages.find(l => l.code === lang) || languages[0]
+  const supportLinks = [
+    { icon: Users, label: t('settings.team'), href: '/team' },
+    { icon: HelpCircle, label: t('settings.help'), href: 'mailto:support@rcinc.app' },
+    { icon: Mail, label: t('settings.contact'), href: 'mailto:support@rcinc.app' },
+  ]
+  const deletionItems = ['settings.delete1', 'settings.delete2', 'settings.delete3', 'settings.delete4', 'settings.delete5']
 
   return (
     <main className="bolt-page bolt-page-with-nav">
-      <div className="bolt-page-shell premium-enter">
+      <div className="bolt-page-shell bolt-settings-shell premium-enter">
+        <header className="bolt-settings-header">
+          <h1>{t('settings.title')}</h1>
+          <p>{t('settings.subtitle')}</p>
+        </header>
 
-      {/* Header */}
-      <div style={{ padding: '0 0 0.5rem' }}>
-        <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.5rem' }}>{t.settings}</h2>
-      </div>
+        {isAuthenticated && user ? (
+          <section className="bolt-settings-account" aria-label={t('settings.account')}>
+            <span className="bolt-settings-avatar">{user.email?.[0]?.toUpperCase()}</span>
+            <span className="bolt-settings-account-copy">
+              <strong>{user.email}</strong>
+              <small>{t('settings.freePlan')}</small>
+            </span>
+          </section>
+        ) : null}
 
-      <div>
-
-        {/* User info */}
-        {isAuthenticated && user && (
-          <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F5C518', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#000' }}>{user.email?.[0]?.toUpperCase()}</span>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
-              <div style={{ fontSize: '0.75rem', color: '#8A8A8A', marginTop: '2px' }}>Free Plan</div>
-            </div>
+        <section className="bolt-settings-section" aria-labelledby="appearance-heading">
+          <div className="bolt-settings-section-heading">
+            <span className="bolt-settings-heading-icon"><Moon aria-hidden="true" /></span>
+            <span><strong id="appearance-heading">{t('settings.appearance')}</strong><small>{t('settings.appearanceHelp')}</small></span>
           </div>
-        )}
-
-        {/* General */}
-        <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>{t.general}</div>
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}>
-
-          {/* Appearance */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
-            <Moon size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
-            <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{t.appearance}</span>
-            <span style={{ fontSize: '0.875rem', color: '#fff' }}>{t.dark}</span>
+          <div className="bolt-theme-picker" role="group" aria-label={t('settings.appearance')}>
+            <button type="button" className={theme === 'light' ? 'is-active' : ''} aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>
+              <Sun aria-hidden="true" /><span>{t('settings.day')}</span>{theme === 'light' ? <Check aria-hidden="true" /> : null}
+            </button>
+            <button type="button" className={theme === 'dark' ? 'is-active' : ''} aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>
+              <Moon aria-hidden="true" /><span>{t('settings.night')}</span>{theme === 'dark' ? <Check aria-hidden="true" /> : null}
+            </button>
           </div>
+        </section>
 
-          {/* Language */}
-          <div style={{ position: 'relative' }}>
-            <div
-              onClick={() => setShowLangPicker(!showLangPicker)}
-              style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}
-            >
-              <Globe size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{t.language}</span>
-              <span style={{ fontSize: '0.875rem', color: '#fff', marginRight: '6px' }}>{selectedLang.flag} {selectedLang.label}</span>
-              <ChevronRight size={14} color="#555" />
+        <section className="bolt-settings-section" aria-labelledby="language-heading">
+          <div className="bolt-settings-section-heading">
+            <span className="bolt-settings-heading-icon"><Globe aria-hidden="true" /></span>
+            <span><strong id="language-heading">{t('settings.language')}</strong><small>{t('settings.languageHelp')}</small></span>
+          </div>
+          <div className="bolt-language-grid" role="group" aria-label={t('settings.language')}>
+            {appLanguages.map(item => (
+              <button key={item.code} type="button" className={language === item.code ? 'is-active' : ''}
+                aria-pressed={language === item.code} onClick={() => setLanguage(item.code)}>
+                <span aria-hidden="true">{item.flag}</span><strong>{item.label}</strong>
+                {language === item.code ? <Check aria-hidden="true" /> : null}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="bolt-settings-section" aria-labelledby="transfer-heading">
+          <div className="bolt-settings-section-heading compact">
+            <span><strong id="transfer-heading">{t('settings.transfers')}</strong></span>
+          </div>
+          <div className="bolt-settings-list">
+            <div className="bolt-settings-row">
+              <Clock aria-hidden="true" /><span>{t('settings.expiry')}</span><strong>{TRANSFER_TTL_HOURS} {t('settings.hours')}</strong>
             </div>
-            {showLangPicker && (
-              <div style={{ background: '#242424', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
-                {languages.map(l => (
-                  <div
-                    key={l.code}
-                    onClick={() => { setLang(l.code); setShowLangPicker(false) }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0.75rem 1rem 0.75rem 2.5rem', cursor: 'pointer', background: lang === l.code ? 'rgba(245,197,24,0.08)' : 'transparent' }}
-                  >
-                    <span style={{ fontSize: '1.1rem' }}>{l.flag}</span>
-                    <span style={{ fontSize: '0.875rem', color: lang === l.code ? '#F5C518' : '#B0B0B0', fontWeight: lang === l.code ? 600 : 400 }}>{l.label}</span>
-                    {lang === l.code && <span style={{ marginLeft: 'auto', color: '#F5C518', fontSize: '0.8rem' }}>✓</span>}
-                  </div>
-                ))}
+            <label className="bolt-settings-row">
+              <Download aria-hidden="true" /><span>{t('settings.maxDownloads')}</span>
+              <select value={defaultMaxDownloads ?? ''} onChange={event => setDefaultMaxDownloads(event.target.value ? Number(event.target.value) : null)}>
+                <option value="">{t('settings.unlimited')}</option>
+                <option value={1}>1x</option><option value={5}>5x</option><option value={10}>10x</option><option value={25}>25x</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section className="bolt-settings-section" aria-labelledby="support-heading">
+          <div className="bolt-settings-section-heading compact"><span><strong id="support-heading">{t('settings.support')}</strong></span></div>
+          <div className="bolt-settings-list">
+            {supportLinks.map(({ icon: Icon, label, href }) => (
+              <a key={label} href={href} className="bolt-settings-row">
+                <Icon aria-hidden="true" /><span>{label}</span><ChevronRight aria-hidden="true" />
+              </a>
+            ))}
+            <div className="bolt-settings-row"><Info aria-hidden="true" /><span>{t('settings.about')}</span><small>{t('settings.version')}</small></div>
+          </div>
+        </section>
+
+        {isAuthenticated ? (
+          <section className="bolt-settings-section is-danger" aria-labelledby="danger-heading">
+            <div className="bolt-settings-section-heading">
+              <span className="bolt-settings-heading-icon"><Trash2 aria-hidden="true" /></span>
+              <span><strong id="danger-heading">{t('settings.delete')}</strong><small>{t('settings.deleteDescription')}</small></span>
+            </div>
+            <div className="bolt-delete-summary">
+              <strong>{t('settings.deleteList')}</strong>
+              <ul>{deletionItems.map(item => <li key={item}>{t(item)}</li>)}</ul>
+            </div>
+            {!deleteConfirm ? (
+              <button type="button" className="bolt-danger-button" onClick={() => setDeleteConfirm(true)}><Trash2 aria-hidden="true" />{t('settings.delete')}</button>
+            ) : (
+              <div className="bolt-delete-confirm">
+                <label htmlFor="delete-confirmation">{t('settings.typeDelete')}</label>
+                <input id="delete-confirmation" value={deleteText} onChange={event => setDeleteText(event.target.value)} placeholder="DELETE" autoComplete="off" />
+                <div>
+                  <button type="button" onClick={() => { setDeleteConfirm(false); setDeleteText('') }}>{t('settings.cancel')}</button>
+                  <button type="button" className="is-danger" disabled={deleteText !== 'DELETE' || deleting} onClick={() => void handleDeleteAccount()}>
+                    {deleting ? <Loader2 className="premium-spin" aria-hidden="true" /> : null}{deleting ? t('settings.deleting') : t('settings.confirmDelete')}
+                  </button>
+                </div>
               </div>
             )}
-          </div>
+          </section>
+        ) : null}
 
-          {/* Default Expiry */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
-            <Clock size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
-            <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{t.defaultExpiry}</span>
-            <span style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 600 }}>{TRANSFER_TTL_HOURS} hours</span>
-          </div>
-
-          {/* Default Max Downloads */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem' }}>
-            <Download size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
-            <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{t.defaultMaxDl}</span>
-            <select
-              value={defaultMaxDl ?? ''}
-              onChange={e => setDefaultMaxDl(e.target.value ? Number(e.target.value) : null)}
-              style={{ background: '#242424', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: '8px', color: '#fff', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', outline: 'none' }}
-            >
-              <option value="">{t.unlimited}</option>
-              <option value={1}>1x</option>
-              <option value={5}>5x</option>
-              <option value={10}>10x</option>
-              <option value={25}>25x</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Support */}
-        <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>{t.support}</div>
-        <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}>
-          {[
-            { icon: Users,      label: 'Team & organization', href: '/team' },
-            { icon: HelpCircle, label: t.helpCenter,          href: 'mailto:support@rcinc.app' },
-            { icon: Mail,       label: t.contactUs,           href: 'mailto:support@rcinc.app' },
-          ].map(({ icon: Icon, label, href }, i, arr) => (
-            <a key={label} href={href} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(255,255,255,0.06)' : 'none' }}>
-              <Icon size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{label}</span>
-              <ChevronRight size={14} color="#555" />
-            </a>
-          ))}
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0.875rem 1rem' }}>
-            <Info size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
-            <span style={{ flex: 1, fontSize: '0.875rem', color: '#B0B0B0' }}>{t.aboutBoltShare}</span>
-            <span style={{ fontSize: '0.8rem', color: '#555' }}>{t.version}</span>
-          </div>
-        </div>
-
-        {/* Delete Account — Google Play compliant */}
-        {isAuthenticated && (
-          <>
-            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#E24B4A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>{t.dangerZone}</div>
-            <div style={{ background: 'rgba(226,75,74,0.06)', border: '0.5px solid rgba(226,75,74,0.25)', borderRadius: '16px', padding: '1rem', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
-                <Trash2 size={16} color="#E24B4A" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#E24B4A' }}>{t.deleteAccount}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#8A8A8A', marginTop: '3px', lineHeight: 1.5 }}>{t.deleteDesc}</div>
-                </div>
-              </div>
-
-              {/* What gets deleted list — required by Google Play */}
-              <div style={{ background: 'rgba(226,75,74,0.06)', borderRadius: '10px', padding: '10px 12px', marginBottom: '12px' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#E24B4A', marginBottom: '6px' }}>{t.willDelete}</div>
-                {[t.d1, t.d2, t.d3, t.d4, t.d5].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px' }}>
-                    <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#8A8A8A', flexShrink: 0, marginTop: '6px' }} />
-                    <span style={{ fontSize: '0.72rem', color: '#8A8A8A', lineHeight: 1.5 }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-
-              {!deleteConfirm ? (
-                <button
-                  onClick={() => setDeleteConfirm(true)}
-                  style={{ width: '100%', background: 'rgba(226,75,74,0.15)', color: '#E24B4A', border: '0.5px solid rgba(226,75,74,0.3)', borderRadius: '10px', padding: '0.75rem', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                >
-                  <Trash2 size={15} /> {t.deleteAccount}
-                </button>
-              ) : (
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: '#E24B4A', textAlign: 'center', marginBottom: '8px', fontWeight: 500 }}>{t.confirmDelete}</p>
-                  <input
-                    type="text"
-                    value={deleteText}
-                    onChange={e => setDeleteText(e.target.value)}
-                    placeholder="DELETE"
-                    style={{ width: '100%', background: '#1A1A1A', border: '0.5px solid rgba(226,75,74,0.4)', borderRadius: '10px', color: '#fff', padding: '0.75rem 1rem', fontSize: '0.9rem', outline: 'none', textAlign: 'center', fontFamily: 'monospace', letterSpacing: '0.1em', marginBottom: '10px' }}
-                  />
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => { setDeleteConfirm(false); setDeleteText('') }}
-                      style={{ flex: 1, background: '#242424', color: '#B0B0B0', border: 'none', borderRadius: '10px', padding: '0.75rem', fontWeight: 500, fontSize: '0.875rem', cursor: 'pointer' }}
-                    >
-                      {t.cancel}
-                    </button>
-                    <button
-                      onClick={handleDeleteAccount}
-                      disabled={deleteText !== 'DELETE' || deleting}
-                      style={{ flex: 1, background: deleteText === 'DELETE' ? '#E24B4A' : 'rgba(226,75,74,0.2)', color: deleteText === 'DELETE' ? '#fff' : '#8A8A8A', border: 'none', borderRadius: '10px', padding: '0.75rem', fontWeight: 600, fontSize: '0.875rem', cursor: deleteText === 'DELETE' ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                    >
-                      {deleting ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> {t.deleting}</> : t.confirmBtn}
-                    </button>
-                  </div>
-                  <p style={{ fontSize: '0.7rem', color: '#555', textAlign: 'center', marginTop: '8px' }}>{t.deleteWarning}</p>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Logout */}
-        {isAuthenticated && (
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            style={{ width: '100%', background: 'rgba(226,75,74,0.1)', color: '#E24B4A', border: '0.5px solid rgba(226,75,74,0.2)', borderRadius: '14px', padding: '1rem', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '1rem' }}
-          >
-            {loggingOut ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <LogOut size={18} />}
-            {t.logout}
+        {isAuthenticated ? (
+          <button type="button" className="bolt-logout-button" disabled={loggingOut} onClick={() => void handleLogout()}>
+            {loggingOut ? <Loader2 className="premium-spin" aria-hidden="true" /> : <LogOut aria-hidden="true" />}{t('settings.logout')}
           </button>
-        )}
+        ) : null}
 
-        {/* Public delete account link — for users not logged in / Google Play requirement */}
-        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          <a href="mailto:support@rcinc.app?subject=Delete my BoltShare account" style={{ fontSize: '0.75rem', color: '#555', textDecoration: 'underline' }}>
-            Request account deletion via email
-          </a>
-        </div>
-      </div>
-
+        <a className="bolt-delete-email-link" href="mailto:support@rcinc.app?subject=Delete my BoltShare account">{t('settings.deleteEmail')}</a>
       </div>
       <AppBottomNav />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </main>
   )
 }
