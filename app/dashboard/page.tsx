@@ -3,23 +3,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  Archive,
-  ArrowLeftRight,
-  Bell,
-  FileText,
-  Film,
-  Home,
-  Image as ImageIcon,
-  Link2,
-  Menu,
-  Send,
-  Settings,
-  Upload,
-  Users,
-  Zap,
-} from 'lucide-react'
+import { Bell, ChevronRight, Download, Eye, Plus, Send, Settings, Upload } from 'lucide-react'
+import AppBottomNav from '@/components/boltshare/AppBottomNav'
+import FileTypeIcon from '@/components/boltshare/FileTypeIcon'
+import StatCard from '@/components/boltshare/StatCard'
 import { useAuth } from '@/lib/AuthContext'
+import { getReceivedTransfers, type ReceivedTransfer } from '@/lib/received-history'
 import { createClient } from '@/lib/supabase/client'
 
 interface SharedFile {
@@ -27,49 +16,48 @@ interface SharedFile {
   file_name: string
   file_type: string
   file_size: number | null
-  share_method: string
   status: string
   expires_at: string
   download_count: number | null
+  max_downloads: number | null
   created_at: string
+}
+
+type ActivityItem = {
+  kind: 'sent' | 'received'
+  id: string
+  name: string
+  type: string
+  size: number
+  date: string
+  href: string
 }
 
 function formatBytes(bytes: number) {
   if (!bytes) return '0 MB'
   if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-function timeAgo(dateString: string) {
-  const difference = Date.now() - new Date(dateString).getTime()
-  const minutes = Math.floor(difference / 60000)
-
+function timeAgo(dateString: string, currentTime: number) {
+  const difference = Math.max(0, currentTime - new Date(dateString).getTime())
+  const minutes = Math.floor(difference / 60_000)
   if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes}m`
-
+  if (minutes < 60) return `${minutes}m ago`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h`
-
-  return `${Math.floor(hours / 24)}d`
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
 
-function isFileActive(file: SharedFile) {
-  return file.status === 'active' && new Date(file.expires_at).getTime() > Date.now()
-}
-
-function FileTypeIcon({ type }: { type: string }) {
-  if (type?.includes('image')) return <ImageIcon size={18} color="#ffc916" />
-  if (type?.includes('video')) return <Film size={18} color="#9d84ff" />
-  if (type?.includes('pdf')) return <FileText size={18} color="#ff6868" />
-  if (type?.includes('zip') || type?.includes('archive')) return <Archive size={18} color="#ffb638" />
-  return <FileText size={18} color="#75a7ff" />
+function isFileActive(file: SharedFile, currentTime: number) {
+  return file.status === 'active' && new Date(file.expires_at).getTime() > currentTime
 }
 
 function LoadingScreen() {
   return (
-    <div className="premium-page" style={{ display: 'grid', placeItems: 'center' }}>
+    <div className="bolt-page bolt-loading-screen">
       <div className="premium-spinner" aria-label="Loading dashboard" />
     </div>
   )
@@ -79,218 +67,169 @@ export default function DashboardPage() {
   const { user, isAuthenticated, isLoadingAuth } = useAuth()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
-
   const [files, setFiles] = useState<SharedFile[]>([])
+  const [receivedFiles, setReceivedFiles] = useState<ReceivedTransfer[]>(getReceivedTransfers)
   const [loading, setLoading] = useState(true)
+  const [systemHealthy, setSystemHealthy] = useState<boolean | null>(null)
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
 
   useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated) {
-      router.replace('/')
-    }
+    if (!isLoadingAuth && !isAuthenticated) router.replace('/')
   }, [isAuthenticated, isLoadingAuth, router])
 
   useEffect(() => {
-    if (!user?.email) return
+    const refresh = () => setReceivedFiles(getReceivedTransfers())
+    window.addEventListener('focus', refresh)
+    window.addEventListener('storage', refresh)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('storage', refresh)
+    }
+  }, [])
 
-    let cancelled = false
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
-    async function loadDashboard() {
-      setLoading(true)
-
-      const { data, error } = await supabase
-        .from('shared_files')
-        .select('id,file_name,file_type,file_size,share_method,status,expires_at,download_count,created_at')
-        .eq('sender_email', user!.email)
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      if (!cancelled) {
-        if (error) {
-          console.error('Unable to load BoltShare dashboard:', error)
-          setFiles([])
-        } else {
-          setFiles((data ?? []) as SharedFile[])
-        }
-        setLoading(false)
+  useEffect(() => {
+    const controller = new AbortController()
+    async function checkHealth() {
+      try {
+        const response = await fetch('/api/health', { cache: 'no-store', signal: controller.signal })
+        const payload = (await response.json()) as { status?: string }
+        setSystemHealthy(response.ok && payload.status === 'healthy')
+      } catch {
+        if (!controller.signal.aborted) setSystemHealthy(false)
       }
     }
+    void checkHealth()
+    return () => controller.abort()
+  }, [])
 
-    void loadDashboard()
+  useEffect(() => {
+    if (!user?.email) return
+    let cancelled = false
+    async function loadDashboard() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('shared_files')
+        .select('id,file_name,file_type,file_size,status,expires_at,download_count,max_downloads,created_at')
+        .eq('sender_email', user!.email)
+        .order('created_at', { ascending: false })
+        .limit(100)
 
-    return () => {
-      cancelled = true
+      if (cancelled) return
+      if (error) {
+        console.error('Unable to load BoltShare dashboard:', error)
+        setFiles([])
+      } else {
+        setFiles((data ?? []) as SharedFile[])
+      }
+      setLoading(false)
     }
+    void loadDashboard()
+    return () => { cancelled = true }
   }, [supabase, user])
 
-  if (isLoadingAuth || !isAuthenticated) {
-    return <LoadingScreen />
-  }
+  if (isLoadingAuth || !isAuthenticated) return <LoadingScreen />
 
-  const firstName =
-    user?.user_metadata?.full_name?.split(' ')[0] ||
-    user?.email?.split('@')[0] ||
-    'there'
-
-  const activeFiles = files.filter(isFileActive)
+  const rawFirstName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
+  const firstName = rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)
   const totalDownloads = files.reduce((total, file) => total + (file.download_count ?? 0), 0)
-  const totalBytes = files.reduce((total, file) => total + (file.file_size ?? 0), 0)
-  const activeBytes = activeFiles.reduce((total, file) => total + (file.file_size ?? 0), 0)
-  const activeFootprintPercent = totalBytes > 0 ? Math.max(4, Math.min(100, (activeBytes / totalBytes) * 100)) : 0
-  const recentFiles = files.slice(0, 4)
+  const alertCount = files.filter(file => {
+    const expiresSoon = isFileActive(file, currentTime) && new Date(file.expires_at).getTime() - currentTime <= 6 * 60 * 60 * 1000
+    const limitReached = Boolean(file.max_downloads && (file.download_count ?? 0) >= file.max_downloads)
+    return expiresSoon || limitReached
+  }).length
 
-  const quickActions = [
-    { label: 'New transfer', href: '/upload', icon: Send },
-    { label: 'My links', href: '/history', icon: Link2 },
-    { label: 'Team', href: '/team', icon: Users },
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ]
-
-  const navItems = [
-    { label: 'Home', href: '/dashboard', icon: Home, active: true },
-    { label: 'Transfers', href: '/history', icon: ArrowLeftRight, active: false },
-    { label: 'Team', href: '/team', icon: Users, active: false },
-    { label: 'Settings', href: '/settings', icon: Settings, active: false },
-  ]
+  const sentActivity: ActivityItem[] = files.map(file => ({
+    kind: 'sent', id: file.id, name: file.file_name, type: file.file_type, size: file.file_size ?? 0,
+    date: file.created_at, href: `/file-analytics/${file.id}`,
+  }))
+  const receivedActivity: ActivityItem[] = receivedFiles.map(file => ({
+    kind: 'received', id: file.id, name: file.fileName, type: file.fileType, size: file.fileSize,
+    date: file.downloadedAt, href: `/receive/${encodeURIComponent(file.token)}`,
+  }))
+  const recentActivity = [...sentActivity, ...receivedActivity]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 2)
+  const systemStatusLabel = systemHealthy === null
+    ? 'Checking system status'
+    : systemHealthy
+      ? 'All systems active'
+      : 'Service status unavailable'
 
   return (
-    <main className="premium-page">
-      <div className="premium-dashboard-shell premium-enter">
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#f4f4f0', fontSize: '0.98rem', fontWeight: 720 }}>
-              <Zap size={18} color="var(--bs-gold)" fill="var(--bs-gold)" />
-              Bolt<span style={{ color: 'var(--bs-gold)', marginLeft: '-0.42rem' }}>Share</span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
-            <Link href="/history" className="premium-icon-button" aria-label="Open recent transfers">
-              <Bell size={19} />
-            </Link>
-            <Link href="/settings" className="premium-icon-button" aria-label="Open menu and settings">
-              <Menu size={20} />
-            </Link>
-          </div>
+    <main className="bolt-dashboard-page">
+      <div className="bolt-dashboard-shell premium-enter">
+        <header className="bolt-dashboard-header">
+          <span aria-hidden="true" />
+          <span className="bolt-dashboard-brand">BoltShare</span>
+          <Link href="/settings" className="bolt-dashboard-settings" aria-label="Open settings">
+            <Settings aria-hidden="true" />
+          </Link>
         </header>
 
-        <section style={{ marginTop: '1.1rem' }}>
-          <p style={{ color: '#ecece8', fontSize: '0.98rem', fontWeight: 680 }}>
-            Good morning, {firstName} <span aria-hidden="true">👋</span>
-          </p>
-
-          <Link href="/upload" style={{ display: 'block', marginTop: '0.9rem', color: 'inherit', textDecoration: 'none' }}>
-            <div className="premium-upload-panel">
-              <div style={{ display: 'grid', width: 42, height: 42, placeItems: 'center', borderRadius: '50%', background: 'rgba(255,201,22,0.12)', color: 'var(--bs-gold)', boxShadow: '0 0 28px rgba(255,201,22,0.1)' }}>
-                <Upload size={21} />
-              </div>
-              <h2 style={{ marginTop: '0.65rem', fontSize: '0.94rem', letterSpacing: '-0.015em' }}>Upload or drop your files</h2>
-              <p style={{ marginTop: '0.18rem', color: '#74797e', fontSize: '0.68rem' }}>Secure, private and automatically expiring</p>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.72rem', borderRadius: 8, background: 'var(--bs-gold)', padding: '0.48rem 0.78rem', color: '#0b0b08', fontSize: '0.72rem', fontWeight: 750 }}>
-                Upload files
-                <Upload size={13} />
-              </span>
+        <section className="bolt-dashboard-hero" aria-labelledby="dashboard-welcome">
+          <div>
+            <p className="bolt-welcome-kicker">Welcome,</p>
+            <h1 id="dashboard-welcome" className="bolt-welcome-name">{firstName}</h1>
+            <div className={`bolt-system-status${systemHealthy === null ? ' is-checking' : systemHealthy ? '' : ' is-degraded'}`}>
+              <span aria-hidden="true" />
+              {systemStatusLabel}
             </div>
-          </Link>
-        </section>
-
-        <section style={{ marginTop: '1.15rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-            <h2 style={{ fontSize: '0.82rem', letterSpacing: '-0.01em' }}>Quick actions</h2>
           </div>
 
-          <div className="premium-quick-grid">
-            {quickActions.map(({ label, href, icon: Icon }) => (
-              <Link key={label} href={href} className="premium-quick-action">
-                <Icon size={18} color="#d9d9d5" />
-                <span style={{ overflow: 'hidden', width: '100%', textAlign: 'center', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+          <div className="bolt-hero-actions">
+            <Link href="/upload" className="bolt-action-button bolt-action-button-dark">
+              <Plus aria-hidden="true" /> Send
+            </Link>
+            <Link href="/receive-code" className="bolt-action-button bolt-action-button-gold">
+              <Download aria-hidden="true" /> Receive
+            </Link>
+          </div>
+        </section>
+
+        <section className="bolt-stat-grid" aria-label="Transfer statistics">
+          <StatCard icon={Send} value={files.length} label="Sent" />
+          <StatCard icon={Download} value={receivedFiles.length} label="Received" />
+          <StatCard icon={Eye} value={totalDownloads} label="Downloads" />
+          <StatCard icon={Bell} value={alertCount} label="Alerts" />
+        </section>
+
+        <Link href="/upload" className="bolt-send-panel" aria-label="Send a file">
+          <span className="bolt-send-panel-icon"><Upload aria-hidden="true" /></span>
+          <h2>Send a File</h2>
+          <p>Drag &amp; drop or tap to upload</p>
+          <span>Large files • Encrypted • Private</span>
+        </Link>
+
+        <section className="bolt-recent-section" aria-labelledby="recent-activity-heading">
+          <div className="bolt-section-heading">
+            <h2 id="recent-activity-heading">Recent Activity</h2>
+            <Link href="/history">View all</Link>
+          </div>
+          <div className="bolt-activity-list">
+            {loading ? (
+              <div className="bolt-activity-empty">Loading activity…</div>
+            ) : recentActivity.length === 0 ? (
+              <div className="bolt-activity-empty">Your sent and received files will appear here.</div>
+            ) : recentActivity.map(item => (
+              <Link key={`${item.kind}-${item.id}`} href={item.href} className="bolt-activity-row">
+                <span className="bolt-document-icon"><FileTypeIcon type={item.type} size={24} /></span>
+                <span className="bolt-activity-copy">
+                  <strong>{item.name}</strong>
+                  <span>{formatBytes(item.size)} • {item.kind === 'sent' ? 'Sent' : 'Downloaded'}</span>
+                </span>
+                <time dateTime={item.date}>{timeAgo(item.date, currentTime)}</time>
+                <ChevronRight className="bolt-activity-chevron" aria-hidden="true" />
               </Link>
             ))}
           </div>
         </section>
-
-        <section style={{ marginTop: '1.2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.58rem' }}>
-            <h2 style={{ fontSize: '0.82rem', letterSpacing: '-0.01em' }}>Recent transfers</h2>
-            <Link href="/history" style={{ color: '#8d9297', fontSize: '0.68rem', textDecoration: 'none' }}>See all</Link>
-          </div>
-
-          <div className="premium-dashboard-card" style={{ overflow: 'hidden' }}>
-            {loading ? (
-              <div style={{ padding: '1.6rem', color: '#686d72', fontSize: '0.78rem', textAlign: 'center' }}>Loading transfers…</div>
-            ) : recentFiles.length === 0 ? (
-              <div style={{ padding: '1.75rem 1rem', textAlign: 'center' }}>
-                <Upload size={25} color="#555b62" style={{ margin: '0 auto' }} />
-                <p style={{ marginTop: '0.45rem', color: '#6f747a', fontSize: '0.76rem' }}>Your first secure transfer will appear here.</p>
-              </div>
-            ) : (
-              recentFiles.map((file) => {
-                const active = isFileActive(file)
-                return (
-                  <Link key={file.id} href={`/file-analytics/${file.id}`} className="premium-file-row">
-                    <span className="premium-file-icon">
-                      <FileTypeIcon type={file.file_type} />
-                    </span>
-                    <span style={{ minWidth: 0, flex: 1 }}>
-                      <span style={{ display: 'block', overflow: 'hidden', color: '#eeeeea', fontSize: '0.77rem', fontWeight: 620, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {file.file_name}
-                      </span>
-                      <span style={{ display: 'block', marginTop: '0.18rem', color: '#686d72', fontSize: '0.64rem' }}>
-                        {formatBytes(file.file_size ?? 0)} · {file.download_count ?? 0} downloads · {timeAgo(file.created_at)}
-                      </span>
-                    </span>
-                    <span style={{ color: active ? 'var(--bs-success)' : '#70757a', fontSize: '0.64rem', fontWeight: 640 }}>
-                      {active ? 'Active' : 'Expired'}
-                    </span>
-                  </Link>
-                )
-              })
-            )}
-          </div>
-        </section>
-
-        <section style={{ marginTop: '1.2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.58rem' }}>
-            <h2 style={{ fontSize: '0.82rem', letterSpacing: '-0.01em' }}>Transfer overview</h2>
-            <span style={{ color: '#696e73', fontSize: '0.65rem' }}>Current account</span>
-          </div>
-
-          <div className="premium-dashboard-card premium-stat-grid">
-            <div className="premium-stat-cell">
-              <div className="premium-stat-value">{files.length}</div>
-              <div className="premium-stat-caption">Transfers</div>
-            </div>
-            <div className="premium-stat-cell">
-              <div className="premium-stat-value">{totalDownloads}</div>
-              <div className="premium-stat-caption">Downloads</div>
-            </div>
-            <div className="premium-stat-cell">
-              <div className="premium-stat-value">{formatBytes(totalBytes)}</div>
-              <div className="premium-stat-caption">Transferred</div>
-            </div>
-          </div>
-        </section>
-
-        <section className="premium-dashboard-card" style={{ marginTop: '0.75rem', padding: '0.82rem 0.9rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.62rem' }}>
-            <span style={{ color: '#e3e3df', fontSize: '0.72rem', fontWeight: 640 }}>Active transfer footprint</span>
-            <span style={{ color: '#74797e', fontSize: '0.64rem' }}>{formatBytes(activeBytes)} active · {formatBytes(totalBytes)} total</span>
-          </div>
-          <div className="premium-progress-track">
-            <div className="premium-progress-value" style={{ width: `${activeFootprintPercent}%` }} />
-          </div>
-        </section>
       </div>
-
-      <nav className="premium-bottom-nav" aria-label="Primary navigation">
-        <div className="premium-bottom-nav-inner">
-          {navItems.map(({ label, href, icon: Icon, active }) => (
-            <Link key={label} href={href} className={`premium-nav-link${active ? ' is-active' : ''}`}>
-              <Icon size={20} />
-              <span>{label}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <AppBottomNav />
     </main>
   )
 }

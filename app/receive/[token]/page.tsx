@@ -4,6 +4,7 @@ import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AlertTriangle, Archive, Download, FileText, Film, Image as ImageIcon, Loader2, Lock, Shield, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { recordReceivedTransfer } from '@/lib/received-history'
 
 type SharedFile = {
   id: string
@@ -104,6 +105,13 @@ export default function ReceivePage({ params }: { params: Promise<{ token: strin
       document.body.appendChild(anchor)
       anchor.click()
       document.body.removeChild(anchor)
+      recordReceivedTransfer({
+        id: file.id,
+        token,
+        fileName: file.fileName,
+        fileType: file.fileType,
+        fileSize: file.fileSize,
+      })
       setPwLocked(false)
       setFiles(current => current.map(item => item.id === file.id
         ? { ...item, downloadCount: item.downloadCount + 1 }

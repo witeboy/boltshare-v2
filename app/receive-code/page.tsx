@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Zap, ArrowRight, QrCode, Shield, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import AppBottomNav from '@/components/boltshare/AppBottomNav'
 
 export default function ReceiveCodePage() {
   const [code, setCode]       = useState('')
@@ -31,8 +32,9 @@ export default function ReceiveCodePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-      <div style={{ width: '100%', maxWidth: '400px' }}>
+    <main className="bolt-page bolt-page-with-nav">
+      <div className="bolt-page-shell premium-enter" style={{ display: 'grid', minHeight: 'calc(100svh - 8rem)', placeItems: 'center' }}>
+        <div style={{ width: '100%', maxWidth: '400px' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '2.5rem' }}>
@@ -139,8 +141,10 @@ export default function ReceiveCodePage() {
             boltshare.rcinc.app
           </a>
         </p>
+        </div>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+      <AppBottomNav />
+    </main>
   )
 }

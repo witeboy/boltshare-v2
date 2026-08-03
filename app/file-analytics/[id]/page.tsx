@@ -23,6 +23,7 @@ import toast from 'react-hot-toast'
 import { useAuth } from '@/lib/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import { APP_URL } from '@/lib/config'
+import AppBottomNav from '@/components/boltshare/AppBottomNav'
 
 interface SharedFile {
   id: string
@@ -323,8 +324,8 @@ export default function FileAnalyticsPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <main className="premium-page">
-      <div className="premium-dashboard-shell premium-enter" style={{ paddingBottom: '2.2rem' }}>
+    <main className="premium-page bolt-page-with-nav">
+      <div className="premium-dashboard-shell premium-enter">
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button type="button" className="premium-icon-button" onClick={() => router.back()} aria-label="Go back">
             <ArrowLeft size={20} />
@@ -481,6 +482,7 @@ export default function FileAnalyticsPage({ params }: { params: Promise<{ id: st
           </p>
         </section>
       </div>
+      <AppBottomNav />
     </main>
   )
 }

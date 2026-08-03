@@ -5,12 +5,11 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
 import {
   Moon, Globe, Clock, Download, HelpCircle,
-  Mail, Info, LogOut, Trash2, ChevronRight,
-  Home, ArrowLeftRight, Users, Settings, Loader2
+  Mail, Info, LogOut, Trash2, ChevronRight, Users, Loader2
 } from 'lucide-react'
-import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { TRANSFER_TTL_HOURS } from '@/lib/config'
+import AppBottomNav from '@/components/boltshare/AppBottomNav'
 
 // ── Translations ───────────────────────────
 const translations: Record<string, Record<string, string>> = {
@@ -190,14 +189,15 @@ export default function SettingsPage() {
   const selectedLang = languages.find(l => l.code === lang) || languages[0]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', paddingBottom: '80px' }}>
+    <main className="bolt-page bolt-page-with-nav">
+      <div className="bolt-page-shell premium-enter">
 
       {/* Header */}
-      <div style={{ padding: '1.25rem 1.25rem 0.5rem' }}>
+      <div style={{ padding: '0 0 0.5rem' }}>
         <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.5rem' }}>{t.settings}</h2>
       </div>
 
-      <div style={{ padding: '0 1.25rem' }}>
+      <div>
 
         {/* User info */}
         {isAuthenticated && user && (
@@ -280,8 +280,9 @@ export default function SettingsPage() {
         <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>{t.support}</div>
         <div style={{ background: '#1A1A1A', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}>
           {[
-            { icon: HelpCircle, label: t.helpCenter,     href: 'mailto:support@rcinc.app' },
-            { icon: Mail,       label: t.contactUs,       href: 'mailto:support@rcinc.app' },
+            { icon: Users,      label: 'Team & organization', href: '/team' },
+            { icon: HelpCircle, label: t.helpCenter,          href: 'mailto:support@rcinc.app' },
+            { icon: Mail,       label: t.contactUs,           href: 'mailto:support@rcinc.app' },
           ].map(({ icon: Icon, label, href }, i, arr) => (
             <a key={label} href={href} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(255,255,255,0.06)' : 'none' }}>
               <Icon size={16} color="#8A8A8A" style={{ marginRight: '10px', flexShrink: 0 }} />
@@ -379,22 +380,9 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Bottom Nav */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#111', borderTop: '0.5px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0.6rem 0 0.8rem', zIndex: 50 }}>
-        {[
-          { icon: Home,           label: 'Home',      href: '/dashboard', active: false },
-          { icon: ArrowLeftRight, label: 'Transfers', href: '/history',   active: false },
-          { icon: Users,          label: 'Team',      href: '/team',      active: false },
-          { icon: Settings,       label: 'Settings',  href: '/settings',  active: true  },
-        ].map(({ icon: Icon, label, href, active }) => (
-          <Link key={label} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '56px' }}>
-            <Icon size={22} color={active ? '#F5C518' : '#555'} />
-            <span style={{ fontSize: '0.65rem', color: active ? '#F5C518' : '#555', fontWeight: active ? 600 : 400 }}>{label}</span>
-          </Link>
-        ))}
       </div>
-
+      <AppBottomNav />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+    </main>
   )
 }

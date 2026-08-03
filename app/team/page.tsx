@@ -6,12 +6,11 @@ import { useAuth } from '@/lib/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import {
   Building2, Users, Mail, Crown, Shield,
-  UserMinus, Plus, Home, ArrowLeftRight,
-  Settings, Loader2
+  UserMinus, Plus, Loader2
 } from 'lucide-react'
-import Link from 'next/link'
 import toast from 'react-hot-toast'
 import type { LucideIcon } from 'lucide-react'
+import AppBottomNav from '@/components/boltshare/AppBottomNav'
 
 const roleColors: Record<string, string> = {
   owner:  '#F5C518',
@@ -197,15 +196,16 @@ export default function TeamPage() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', paddingBottom: '80px' }}>
+    <main className="bolt-page bolt-page-with-nav">
+      <div className="bolt-page-shell premium-enter">
 
       {/* Header */}
-      <div style={{ padding: '1.25rem 1.25rem 0.75rem' }}>
+      <div style={{ padding: '0 0 0.75rem' }}>
         <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.5rem' }}>Team</h2>
         <p style={{ color: '#8A8A8A', fontSize: '0.8rem', marginTop: '2px' }}>Manage your organization</p>
       </div>
 
-      <div style={{ padding: '0 1.25rem' }}>
+      <div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#555' }}>
@@ -300,21 +300,9 @@ export default function TeamPage() {
         )}
       </div>
 
-      {/* Bottom Nav */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#111', borderTop: '0.5px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0.6rem 0 0.8rem', zIndex: 50 }}>
-        {[
-          { icon: Home,           label: 'Home',      href: '/dashboard', active: false },
-          { icon: ArrowLeftRight, label: 'Transfers', href: '/history',   active: false },
-          { icon: Users,          label: 'Team',      href: '/team',      active: true  },
-          { icon: Settings,       label: 'Settings',  href: '/settings',  active: false },
-        ].map(({ icon: Icon, label, href, active }) => (
-          <Link key={label} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '56px' }}>
-            <Icon size={22} color={active ? '#F5C518' : '#555'} />
-            <span style={{ fontSize: '0.65rem', color: active ? '#F5C518' : '#555', fontWeight: active ? 600 : 400 }}>{label}</span>
-          </Link>
-        ))}
       </div>
+      <AppBottomNav />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+    </main>
   )
 }

@@ -703,3 +703,453 @@ p { line-height: 1.62; color: var(--bs-text-2); }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Reference-inspired BoltShare application shell */
+.bolt-page,
+.bolt-dashboard-page {
+  position: relative;
+  min-height: 100svh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 82% 11%, rgba(255, 205, 0, 0.025), transparent 20rem),
+    linear-gradient(180deg, #050606 0%, #080909 54%, #050606 100%);
+  color: #f7f7f7;
+}
+
+.bolt-page-with-nav { padding-bottom: calc(7.6rem + env(safe-area-inset-bottom)); }
+.bolt-page-shell {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: max(1.25rem, env(safe-area-inset-top)) 1.4rem 2rem;
+}
+.bolt-loading-screen { display: grid; place-items: center; }
+
+.bolt-app-header {
+  display: grid;
+  min-height: 3.2rem;
+  grid-template-columns: 3rem 1fr 3rem;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+.bolt-app-header-side { display: flex; align-items: center; justify-content: flex-start; }
+.bolt-app-header-side-right { justify-content: flex-end; }
+.bolt-app-header-title {
+  overflow: hidden;
+  color: #f7f7f7;
+  font-size: 1.42rem;
+  font-weight: 720;
+  letter-spacing: -0.045em;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bolt-icon-button {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.85rem;
+  background: rgba(16,17,17,0.9);
+  color: #f3f3f3;
+  text-decoration: none;
+}
+.bolt-icon-button svg { width: 1.2rem; height: 1.2rem; }
+
+.bolt-dashboard-shell {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: max(2.25rem, env(safe-area-inset-top)) clamp(1.35rem, 5.2vw, 2.75rem) calc(8.8rem + env(safe-area-inset-bottom));
+}
+.bolt-dashboard-header {
+  display: grid;
+  grid-template-columns: 2.7rem minmax(0, 1fr) 2.7rem;
+  align-items: center;
+}
+.bolt-dashboard-brand {
+  color: #f7f7f7;
+  font-size: clamp(1.45rem, 5vw, 2rem);
+  font-weight: 670;
+  letter-spacing: -0.052em;
+  text-align: center;
+}
+.bolt-dashboard-settings {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.85rem;
+  background: rgba(16,17,17,0.72);
+  color: #929292;
+}
+.bolt-dashboard-settings:hover { border-color: rgba(255,212,0,0.28); color: #ffd400; }
+.bolt-dashboard-settings svg { width: 1.2rem; height: 1.2rem; }
+.bolt-dashboard-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(1rem, 5vw, 2.4rem);
+  margin-top: clamp(3.25rem, 10vw, 5.3rem);
+}
+.bolt-welcome-kicker {
+  color: #f5f5f5;
+  font-size: clamp(1.55rem, 5.2vw, 2.2rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+.bolt-welcome-name {
+  margin-top: 0.25rem;
+  color: #f8f8f8;
+  font-size: clamp(2.35rem, 8vw, 3.45rem);
+  font-weight: 760;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
+}
+.bolt-system-status {
+  display: flex;
+  align-items: center;
+  gap: 0.78rem;
+  margin-top: 1.2rem;
+  color: #aaa9aa;
+  font-size: clamp(0.95rem, 3.6vw, 1.25rem);
+  line-height: 1;
+}
+.bolt-system-status > span {
+  width: 0.78rem;
+  height: 0.78rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #ffd400;
+  box-shadow: 0 0 18px rgba(255, 212, 0, 0.28);
+}
+.bolt-system-status.is-degraded > span { background: #ff6868; box-shadow: 0 0 18px rgba(255,104,104,0.25); }
+.bolt-system-status.is-checking > span { background: #777; box-shadow: none; }
+
+.bolt-hero-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(0.65rem, 2.6vw, 1.1rem); }
+.bolt-action-button {
+  display: inline-flex;
+  min-height: clamp(4rem, 13vw, 5rem);
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 1rem;
+  padding: 0 1.25rem;
+  color: #f7f7f7;
+  font-size: clamp(1rem, 3.7vw, 1.28rem);
+  font-weight: 560;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 140ms ease, filter 140ms ease;
+}
+.bolt-action-button:hover { transform: translateY(-1px); }
+.bolt-action-button:active { transform: translateY(1px); }
+.bolt-action-button svg { width: 1.65rem; height: 1.65rem; stroke-width: 1.85; }
+.bolt-action-button-dark { background: linear-gradient(180deg, rgba(20,21,21,0.96), rgba(12,13,13,0.98)); }
+.bolt-action-button-gold {
+  border-color: #ffd400;
+  background: linear-gradient(145deg, #ffd500, #ffca00);
+  color: #090909;
+  box-shadow: 0 12px 32px rgba(255,207,0,0.1), inset 0 1px 0 rgba(255,255,255,0.45);
+  font-weight: 650;
+}
+
+.bolt-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.55rem, 2.4vw, 1.15rem);
+  margin-top: clamp(2.8rem, 8vw, 4rem);
+}
+.bolt-stat-card {
+  display: flex;
+  min-width: 0;
+  min-height: clamp(8rem, 27vw, 11.8rem);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.11);
+  border-radius: 1.05rem;
+  background: linear-gradient(145deg, rgba(255,255,255,0.018), transparent 45%), linear-gradient(180deg, #111212 0%, #0c0d0d 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  text-align: center;
+}
+.bolt-stat-card svg { width: clamp(1.7rem, 6.5vw, 2.5rem); height: clamp(1.7rem, 6.5vw, 2.5rem); color: #ffd400; stroke-width: 1.9; }
+.bolt-stat-card strong {
+  margin-top: 1rem;
+  color: #f7f7f7;
+  font-size: clamp(1.8rem, 7vw, 2.85rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 690;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+.bolt-stat-card span {
+  margin-top: 0.85rem;
+  overflow: hidden;
+  width: 100%;
+  padding: 0 0.25rem;
+  color: #aaa8aa;
+  font-size: clamp(0.83rem, 3.5vw, 1.15rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bolt-send-panel {
+  display: flex;
+  min-height: clamp(12.6rem, 44vw, 17rem);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #f3cf00;
+  border-radius: 1.5rem;
+  margin-top: clamp(1.75rem, 5vw, 2.5rem);
+  background: radial-gradient(circle at 50% 35%, rgba(255,212,0,0.045), transparent 36%), linear-gradient(180deg, rgba(8,9,9,0.72), rgba(7,8,8,0.92));
+  color: inherit;
+  text-align: center;
+  text-decoration: none;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+.bolt-send-panel:hover { border-color: #ffdd20; transform: translateY(-1px); }
+.bolt-send-panel-icon {
+  display: grid;
+  width: clamp(3.5rem, 12vw, 4.8rem);
+  height: clamp(3.5rem, 12vw, 4.8rem);
+  place-items: center;
+  border-radius: 1rem;
+  background: rgba(255,212,0,0.035);
+  color: #ffd400;
+}
+.bolt-send-panel-icon svg { width: clamp(2.35rem, 8vw, 3.25rem); height: clamp(2.35rem, 8vw, 3.25rem); stroke-width: 1.7; }
+.bolt-send-panel h2 { margin-top: 0.65rem; color: #f7f7f7; font-size: clamp(1.65rem, 6.4vw, 2.35rem); font-weight: 690; letter-spacing: -0.045em; }
+.bolt-send-panel p { margin-top: 0.65rem; color: #a6a4a6; font-size: clamp(0.98rem, 4vw, 1.28rem); line-height: 1.25; }
+.bolt-send-panel > span:last-child { margin-top: 0.8rem; color: #a6a4a6; font-size: clamp(0.9rem, 3.7vw, 1.18rem); }
+
+.bolt-recent-section { margin-top: clamp(2.6rem, 8vw, 4rem); }
+.bolt-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.bolt-section-heading h2 { color: #f7f7f7; font-size: clamp(1.45rem, 5.3vw, 2rem); font-weight: 690; letter-spacing: -0.045em; }
+.bolt-section-heading a { color: #ffdc00; font-size: clamp(0.98rem, 3.6vw, 1.25rem); font-weight: 570; text-decoration: none; }
+.bolt-activity-list { display: grid; gap: 0.48rem; }
+.bolt-activity-row,
+.bolt-activity-empty {
+  min-height: clamp(5.5rem, 18vw, 6.75rem);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 1.05rem;
+  background: linear-gradient(180deg, rgba(10,11,11,0.94), rgba(7,8,8,0.98));
+}
+.bolt-activity-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.15rem;
+  color: inherit;
+  text-decoration: none;
+}
+.bolt-activity-row:hover { border-color: rgba(255,212,0,0.28); }
+.bolt-document-icon {
+  position: relative;
+  display: grid;
+  width: clamp(2.65rem, 10vw, 3.5rem);
+  height: clamp(3rem, 11vw, 3.8rem);
+  place-items: center;
+  border-radius: 0.5rem;
+  background: linear-gradient(145deg, #ffdc00, #ffc900);
+  color: #101010;
+}
+.bolt-document-icon::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.78rem;
+  height: 0.78rem;
+  border-bottom-left-radius: 0.35rem;
+  background: #080808;
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  content: '';
+}
+.bolt-document-icon svg { color: #111; stroke-width: 2.1; }
+.bolt-activity-copy { min-width: 0; }
+.bolt-activity-copy strong,
+.bolt-activity-copy span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bolt-activity-copy strong { color: #f6f6f6; font-size: clamp(1rem, 4.1vw, 1.3rem); font-weight: 610; letter-spacing: -0.03em; }
+.bolt-activity-copy span { margin-top: 0.36rem; color: #aaa8aa; font-size: clamp(0.86rem, 3.5vw, 1.08rem); }
+.bolt-activity-row time { color: #aaa8aa; font-size: clamp(0.82rem, 3.3vw, 1.05rem); white-space: nowrap; }
+.bolt-activity-chevron { width: 1.4rem; height: 1.4rem; color: #858585; stroke-width: 1.8; }
+.bolt-activity-empty { display: grid; place-items: center; padding: 1.5rem; color: #777; font-size: 0.9rem; text-align: center; }
+
+.bolt-bottom-nav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 80;
+  border-top: 1px solid rgba(255,255,255,0.09);
+  background: rgba(5,6,6,0.94);
+  box-shadow: 0 -16px 40px rgba(0,0,0,0.28);
+  backdrop-filter: blur(22px) saturate(135%);
+}
+.bolt-bottom-nav-inner {
+  display: grid;
+  width: min(100%, 760px);
+  min-height: 6.25rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
+  margin: 0 auto;
+  padding: 0.65rem 0.7rem calc(0.62rem + env(safe-area-inset-bottom));
+}
+.bolt-nav-item {
+  display: flex;
+  min-width: 0;
+  min-height: 4.2rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.38rem;
+  color: #929292;
+  font-size: clamp(0.68rem, 2.8vw, 0.9rem);
+  font-weight: 520;
+  text-decoration: none;
+}
+.bolt-nav-item svg { width: clamp(1.5rem, 6vw, 2rem); height: clamp(1.5rem, 6vw, 2rem); stroke-width: 1.75; }
+.bolt-nav-item span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
+.bolt-nav-item.is-active { color: #ffdc00; }
+.bolt-nav-create {
+  display: grid;
+  width: clamp(4rem, 16vw, 5.35rem);
+  height: clamp(4rem, 16vw, 5.35rem);
+  place-self: start center;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.45);
+  border-radius: 999px;
+  background: linear-gradient(145deg, #ffdd0a, #ffca00);
+  color: #080808;
+  box-shadow: 0 10px 30px rgba(255,205,0,0.14), inset 0 1px 0 rgba(255,255,255,0.52);
+  text-decoration: none;
+  transform: translateY(-1.2rem);
+}
+.bolt-nav-create:hover { filter: brightness(1.04); transform: translateY(-1.32rem) scale(1.015); }
+.bolt-nav-create:active { transform: translateY(-1.08rem) scale(0.985); }
+.bolt-nav-create svg { width: clamp(2rem, 8vw, 2.75rem); height: clamp(2rem, 8vw, 2.75rem); stroke-width: 1.65; }
+
+.bolt-subpage-intro { margin: 0.25rem 0 1.2rem; }
+.bolt-subpage-intro h1 { font-size: clamp(1.75rem, 7vw, 2.35rem); font-weight: 720; letter-spacing: -0.05em; }
+.bolt-subpage-intro p { margin-top: 0.35rem; color: #898989; font-size: 0.86rem; }
+.bolt-tabs {
+  display: inline-flex;
+  gap: 0.4rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 999px;
+  background: #0d0e0e;
+}
+.bolt-tabs button {
+  min-height: 2.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 0 1rem;
+  color: #888;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 590;
+  text-transform: capitalize;
+}
+.bolt-tabs button.is-active { background: #ffd400; color: #080808; }
+.bolt-history-list { display: grid; gap: 0.55rem; margin-top: 1.25rem; }
+.bolt-history-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #111212, #0b0c0c);
+  padding: 0.75rem;
+}
+.bolt-history-main { display: flex; min-width: 0; flex: 1; align-items: center; gap: 0.8rem; color: inherit; text-decoration: none; }
+.bolt-history-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: rgba(255,212,0,0.1);
+  color: #ffd400;
+}
+.bolt-history-copy { min-width: 0; flex: 1; }
+.bolt-history-copy strong,
+.bolt-history-copy span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bolt-history-copy strong { color: #f4f4f4; font-size: 0.9rem; font-weight: 620; }
+.bolt-history-copy span { margin-top: 0.27rem; color: #838383; font-size: 0.72rem; }
+.bolt-history-actions { display: flex; flex: 0 0 auto; gap: 0.4rem; }
+.bolt-history-actions button {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.65rem;
+  background: #191a1a;
+  color: #aaa;
+  cursor: pointer;
+}
+.bolt-history-actions button.is-danger { border-color: rgba(255,103,103,0.12); background: rgba(255,103,103,0.08); color: #ff6868; }
+.bolt-history-actions button:disabled { cursor: wait; opacity: 0.45; }
+.bolt-history-actions svg,
+.bolt-history-status svg { width: 0.95rem; height: 0.95rem; }
+.bolt-history-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.32rem;
+  border-radius: 999px;
+  padding: 0.38rem 0.6rem;
+  color: #929292;
+  font-size: 0.66rem;
+  font-weight: 620;
+}
+.bolt-history-status.is-received { background: rgba(255,212,0,0.08); color: #ffd400; }
+.bolt-list-empty {
+  display: flex;
+  min-height: 14rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(255,255,255,0.12);
+  border-radius: 1rem;
+  background: rgba(13,14,14,0.75);
+  padding: 2rem;
+  color: #666;
+  text-align: center;
+}
+.bolt-list-empty strong { margin-top: 0.8rem; color: #ddd; font-size: 1rem; }
+.bolt-list-empty span { margin-top: 0.3rem; font-size: 0.8rem; }
+.bolt-list-empty a { margin-top: 1rem; border-radius: 0.8rem; background: #ffd400; padding: 0.7rem 1rem; color: #080808; font-size: 0.8rem; font-weight: 700; text-decoration: none; }
+
+@media (max-width: 600px) {
+  .bolt-dashboard-hero { gap: 0.8rem; }
+  .bolt-action-button { min-width: 0; padding: 0 0.85rem; }
+  .bolt-stat-card { border-radius: 0.9rem; }
+  .bolt-activity-row { gap: 0.72rem; padding-right: 0.8rem; padding-left: 0.8rem; }
+}
+@media (max-width: 430px) {
+  .bolt-dashboard-shell { padding-right: 1rem; padding-left: 1rem; }
+  .bolt-dashboard-hero { grid-template-columns: 1fr; margin-top: 2.8rem; }
+  .bolt-hero-actions { width: 100%; margin-top: 0.4rem; }
+  .bolt-action-button { min-height: 3.65rem; }
+  .bolt-stat-grid { gap: 0.45rem; }
+  .bolt-stat-card { min-height: 7.4rem; }
+  .bolt-stat-card strong { margin-top: 0.7rem; }
+  .bolt-stat-card span { margin-top: 0.6rem; }
+  .bolt-activity-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .bolt-activity-chevron { display: none; }
+  .bolt-history-row { gap: 0.45rem; padding: 0.65rem; }
+  .bolt-history-status { display: none; }
+}
+@media (max-width: 340px) {
+  .bolt-stat-card span { font-size: 0.67rem; }
+  .bolt-nav-item { font-size: 0.59rem; }
+}

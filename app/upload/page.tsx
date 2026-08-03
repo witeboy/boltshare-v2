@@ -11,6 +11,7 @@ import {
 import toast from 'react-hot-toast'
 import { QRCodeSVG } from 'qrcode.react'
 import { TRANSFER_TTL_HOURS } from '@/lib/config'
+import AppBottomNav from '@/components/boltshare/AppBottomNav'
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return bytes + ' B'
@@ -301,7 +302,8 @@ export default function UploadPage() {
   // ── Link Created screen ───────────────────
   if (shareLink) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0D0D0D', padding: '1.25rem' }}>
+      <main className="bolt-page bolt-page-with-nav">
+        <div className="bolt-page-shell premium-enter">
         <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: '#8A8A8A', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
           <ArrowLeft size={16} /> Back to dashboard
         </button>
@@ -366,13 +368,16 @@ export default function UploadPage() {
         <button onClick={() => { setFiles([]); setShareLink(''); setShareCode(''); setExpiresAt('') }} style={{ width: '100%', background: '#F5C518', color: '#000', border: 'none', borderRadius: '14px', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
           Done
         </button>
-      </div>
+        </div>
+        <AppBottomNav />
+      </main>
     )
   }
 
   // ── Upload screen ─────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', padding: '1.25rem', paddingBottom: '80px' }}>
+    <main className="bolt-page bolt-page-with-nav">
+      <div className="bolt-page-shell premium-enter">
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
@@ -519,6 +524,8 @@ export default function UploadPage() {
       </button>
 
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+      </div>
+      <AppBottomNav />
+    </main>
   )
 }
