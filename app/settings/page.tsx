@@ -1,19 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Check, ChevronRight, Clock, Download, Globe, HelpCircle, Info, Loader2,
-  LogOut, Mail, Moon, Sun, Trash2, Users,
+  LogOut, Mail, Moon, Save, Sun, Trash2, UserRound, Users,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import AppBottomNav from '@/components/boltshare/AppBottomNav'
 import { TRANSFER_TTL_HOURS } from '@/lib/config'
 import { useAuth } from '@/lib/AuthContext'
 import { appLanguages, usePreferences } from '@/lib/PreferencesContext'
+import { getUserName } from '@/lib/user-profile'
 
 export default function SettingsPage() {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout, updateProfileName } = useAuth()
   const { language, setLanguage, setTheme, t, theme } = usePreferences()
   const router = useRouter()
   const [defaultMaxDownloads, setDefaultMaxDownloads] = useState<number | null>(null)
@@ -21,6 +22,18 @@ export default function SettingsPage() {
   const [deleteText, setDeleteText] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const storedName = getUserName(user)
+      setFirstName(storedName.firstName)
+      setLastName(storedName.lastName)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [user])
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -45,6 +58,20 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSaveProfile() {
+    if (!firstName.trim() || !lastName.trim() || savingProfile) return
+    setSavingProfile(true)
+    try {
+      await updateProfileName(firstName, lastName)
+      toast.success(t('profile.saved'))
+    } catch (error) {
+      console.error('Unable to save BoltShare profile name:', error)
+      toast.error(t('profile.saveError'))
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
   const supportLinks = [
     { icon: Users, label: t('settings.team'), href: '/team' },
     { icon: HelpCircle, label: t('settings.help'), href: 'mailto:support@rcinc.app' },
@@ -62,11 +89,34 @@ export default function SettingsPage() {
 
         {isAuthenticated && user ? (
           <section className="bolt-settings-account" aria-label={t('settings.account')}>
-            <span className="bolt-settings-avatar">{user.email?.[0]?.toUpperCase()}</span>
+            <span className="bolt-settings-avatar">{(firstName || user.email)?.[0]?.toUpperCase()}</span>
             <span className="bolt-settings-account-copy">
-              <strong>{user.email}</strong>
-              <small>{t('settings.freePlan')}</small>
+              <strong>{firstName ? `${firstName} ${lastName}`.trim() : user.email}</strong>
+              <small>{firstName ? user.email : t('settings.freePlan')}</small>
             </span>
+          </section>
+        ) : null}
+
+        {isAuthenticated && user ? (
+          <section className="bolt-settings-section" aria-labelledby="profile-heading">
+            <div className="bolt-settings-section-heading">
+              <span className="bolt-settings-heading-icon"><UserRound aria-hidden="true" /></span>
+              <span><strong id="profile-heading">{t('profile.settingsTitle')}</strong><small>{t('profile.settingsHelp')}</small></span>
+            </div>
+            <div className="bolt-settings-profile-form">
+              <label>
+                <span>{t('profile.firstName')}</span>
+                <input value={firstName} onChange={event => setFirstName(event.target.value)} maxLength={50} autoComplete="given-name" />
+              </label>
+              <label>
+                <span>{t('profile.lastName')}</span>
+                <input value={lastName} onChange={event => setLastName(event.target.value)} maxLength={50} autoComplete="family-name" />
+              </label>
+              <button type="button" disabled={!firstName.trim() || !lastName.trim() || savingProfile} onClick={() => void handleSaveProfile()}>
+                {savingProfile ? <Loader2 className="premium-spin" aria-hidden="true" /> : <Save aria-hidden="true" />}
+                {savingProfile ? t('profile.saving') : t('profile.save')}
+              </button>
+            </div>
           </section>
         ) : null}
 

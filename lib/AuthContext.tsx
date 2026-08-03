@@ -9,6 +9,8 @@ interface AuthContextType {
   session: Session | null
   isAuthenticated: boolean
   isLoadingAuth: boolean
+  updateProfileName: (firstName: string, lastName: string) => Promise<User>
+  dismissNamePrompt: () => Promise<User>
   logout: () => Promise<void>
 }
 
@@ -17,6 +19,8 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isAuthenticated: false,
   isLoadingAuth: true,
+  updateProfileName: async () => { throw new Error('Authentication is not ready') },
+  dismissNamePrompt: async () => { throw new Error('Authentication is not ready') },
   logout: async () => {},
 })
 
@@ -58,6 +62,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null)
   }
 
+  const updateUserMetadata = async (metadata: Record<string, unknown>) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        ...(user?.user_metadata ?? {}),
+        ...metadata,
+      },
+    })
+
+    if (error || !data.user) throw error ?? new Error('Profile could not be updated')
+    setUser(data.user)
+    setSession(current => current ? { ...current, user: data.user } : current)
+    return data.user
+  }
+
+  const updateProfileName = async (firstName: string, lastName: string) => {
+    const normalizedFirstName = firstName.trim().replace(/\s+/g, ' ')
+    const normalizedLastName = lastName.trim().replace(/\s+/g, ' ')
+
+    if (!normalizedFirstName || !normalizedLastName) {
+      throw new Error('First and last name are required')
+    }
+
+    return updateUserMetadata({
+      first_name: normalizedFirstName,
+      last_name: normalizedLastName,
+      full_name: `${normalizedFirstName} ${normalizedLastName}`,
+      name_prompt_completed: true,
+      name_prompt_dismissed: false,
+    })
+  }
+
+  const dismissNamePrompt = async () => updateUserMetadata({ name_prompt_dismissed: true })
+
   return (
     <AuthContext.Provider
       value={{
@@ -65,6 +102,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         isAuthenticated: !!user,
         isLoadingAuth,
+        updateProfileName,
+        dismissNamePrompt,
         logout,
       }}
     >

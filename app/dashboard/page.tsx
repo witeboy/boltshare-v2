@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bell, ChevronRight, Download, Eye, Plus, Send, Settings, Upload } from 'lucide-react'
+import { Bell, ChevronRight, Download, Eye, Plus, Send, Upload } from 'lucide-react'
 import AppBottomNav from '@/components/boltshare/AppBottomNav'
+import DashboardQuickControls from '@/components/boltshare/DashboardQuickControls'
 import FileTypeIcon from '@/components/boltshare/FileTypeIcon'
+import NameOnboardingDialog from '@/components/boltshare/NameOnboardingDialog'
 import StatCard from '@/components/boltshare/StatCard'
 import { useAuth } from '@/lib/AuthContext'
 import { getReceivedTransfers, type ReceivedTransfer } from '@/lib/received-history'
 import { createClient } from '@/lib/supabase/client'
 import { usePreferences } from '@/lib/PreferencesContext'
+import { getUserName } from '@/lib/user-profile'
 
 interface SharedFile {
   id: string
@@ -75,6 +78,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [systemHealthy, setSystemHealthy] = useState<boolean | null>(null)
   const [currentTime, setCurrentTime] = useState(() => Date.now())
+  const [savedFirstName, setSavedFirstName] = useState('')
 
   useEffect(() => {
     if (!isLoadingAuth && !isAuthenticated) router.replace('/')
@@ -137,8 +141,8 @@ export default function DashboardPage() {
 
   if (isLoadingAuth || !isAuthenticated) return <LoadingScreen />
 
-  const rawFirstName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
-  const firstName = rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)
+  const storedFirstName = getUserName(user).firstName
+  const firstName = savedFirstName || storedFirstName || t('profile.fallbackName')
   const totalDownloads = files.reduce((total, file) => total + (file.download_count ?? 0), 0)
   const alertCount = files.filter(file => {
     const expiresSoon = isFileActive(file, currentTime) && new Date(file.expires_at).getTime() - currentTime <= 6 * 60 * 60 * 1000
@@ -166,11 +170,7 @@ export default function DashboardPage() {
   return (
     <main className="bolt-dashboard-page">
       <div className="bolt-dashboard-shell premium-enter">
-        <div className="bolt-dashboard-toolbar">
-          <Link href="/settings" className="bolt-dashboard-settings" aria-label={t('settings.title')}>
-            <Settings aria-hidden="true" />
-          </Link>
-        </div>
+        <DashboardQuickControls />
 
         <section className="bolt-dashboard-hero" aria-labelledby="dashboard-welcome">
           <div>
@@ -231,6 +231,7 @@ export default function DashboardPage() {
         </section>
       </div>
       <AppBottomNav />
+      <NameOnboardingDialog onSaved={setSavedFirstName} />
     </main>
   )
 }
