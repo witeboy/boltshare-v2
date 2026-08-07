@@ -7,8 +7,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  DatabaseZap,
-  EyeOff,
   LockKeyhole,
   Mail,
   RefreshCw,
@@ -201,19 +199,19 @@ export default function OnboardingPage() {
   if (screen === 'landing') {
     return (
       <main className="premium-page">
-        <div className="premium-shell premium-enter" style={{ display: 'flex', flexDirection: 'column' }}>
-          <header style={{ paddingTop: '0.35rem' }}>
+        <div className="premium-shell premium-enter premium-landing-shell" style={{ display: 'flex', flexDirection: 'column' }}>
+          <header className="premium-landing-header" style={{ paddingTop: '0.35rem' }}>
             <BoltBrand />
           </header>
 
-          <section style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <section className="premium-landing-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div className="premium-hero-art" aria-hidden="true">
               <div className="premium-bolt-stage">
                 <Zap className="premium-bolt-hero" size={92} fill="currentColor" strokeWidth={2.35} />
               </div>
             </div>
 
-            <div style={{ marginTop: '-0.25rem' }}>
+            <div className="premium-landing-copy" style={{ marginTop: '-0.25rem' }}>
               <h1 className="premium-heading">
                 Share files.
                 <br />
@@ -225,7 +223,7 @@ export default function OnboardingPage() {
             </div>
           </section>
 
-          <footer style={{ paddingTop: '1.7rem' }}>
+          <footer className="premium-landing-footer" style={{ paddingTop: '1.7rem' }}>
             <Link href="/upload" className="premium-primary-button" style={{ textDecoration: 'none' }}>
               Send a file without an account
               <ArrowRight size={18} />
@@ -235,12 +233,12 @@ export default function OnboardingPage() {
               Sign in for history and teams
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginTop: '1.05rem', color: '#73777c', fontSize: '0.72rem' }}>
+            <div className="premium-privacy-caption" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginTop: '1.05rem', color: '#73777c', fontSize: '0.72rem' }}>
               <ShieldCheck size={13} color="var(--bs-gold)" />
               <span>Your file contents are never used for advertising.</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.8rem', fontSize: '0.7rem' }}>
+            <div className="premium-footer-links" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.8rem', fontSize: '0.7rem' }}>
               <Link href="/support" style={{ color: '#8f9398' }}>Support</Link>
               <Link href="/privacy" style={{ color: '#8f9398' }}>Privacy</Link>
             </div>
@@ -262,8 +260,8 @@ export default function OnboardingPage() {
             <div style={{ width: 40 }} aria-hidden="true" />
           </header>
 
-          <section style={{ marginTop: 'clamp(2.2rem, 8vh, 4.7rem)' }}>
-            <h1 style={{ fontSize: 'clamp(2rem, 8vw, 2.65rem)' }}>Welcome to BoltShare</h1>
+          <section className="premium-auth-section" style={{ marginTop: 'clamp(2.2rem, 8vh, 4.7rem)' }}>
+            <h1 className="premium-auth-heading" style={{ fontSize: 'clamp(2rem, 8vw, 2.65rem)' }}>Welcome to BoltShare</h1>
             <p style={{ marginTop: '0.7rem', color: '#8f9398', fontSize: '0.9rem' }}>
               Enter your email to continue. No password required.
             </p>
@@ -273,6 +271,7 @@ export default function OnboardingPage() {
                 event.preventDefault()
                 void sendCode()
               }}
+              className="premium-auth-form"
               style={{ marginTop: '2.1rem' }}
             >
               <label className="premium-label" htmlFor="boltshare-email">
@@ -321,34 +320,7 @@ export default function OnboardingPage() {
               <span>No password required</span>
             </div>
 
-            <div style={{ marginTop: '2.35rem' }}>
-              <p className="premium-eyebrow" style={{ marginBottom: '0.75rem' }}>Built for your privacy</p>
-              <div className="premium-security-list">
-                <div className="premium-security-row">
-                  <span className="premium-security-icon"><LockKeyhole size={15} /></span>
-                  <div>
-                    <div style={{ fontSize: '0.79rem', fontWeight: 660, color: '#f0f0ec' }}>Protected transfers</div>
-                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>Secure delivery controls protect each file you share.</p>
-                  </div>
-                </div>
-                <div className="premium-security-row">
-                  <span className="premium-security-icon"><EyeOff size={15} /></span>
-                  <div>
-                    <div style={{ fontSize: '0.79rem', fontWeight: 660, color: '#f0f0ec' }}>Private by default</div>
-                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>Your files are not used to personalize advertising or sold.</p>
-                  </div>
-                </div>
-                <div className="premium-security-row">
-                  <span className="premium-security-icon"><DatabaseZap size={15} /></span>
-                  <div>
-                    <div style={{ fontSize: '0.79rem', fontWeight: 660, color: '#f0f0ec' }}>Automatic expiry</div>
-                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>Files and transfer records are permanently deleted 48 hours after upload.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <p style={{ margin: '1.65rem auto 0', maxWidth: 310, color: '#5e6368', fontSize: '0.67rem', lineHeight: 1.55, textAlign: 'center' }}>
+            <p className="premium-auth-legal" style={{ margin: '1.65rem auto 0', maxWidth: 310, color: '#5e6368', fontSize: '0.67rem', lineHeight: 1.55, textAlign: 'center' }}>
               By continuing, you agree to BoltShare&apos;s secure sign-in process and acknowledge our{' '}
               <Link href="/privacy" style={{ color: '#92969b', textDecoration: 'underline', textUnderlineOffset: 3 }}>
                 Privacy Policy
@@ -373,7 +345,7 @@ export default function OnboardingPage() {
           </button>
         </header>
 
-        <section style={{ marginTop: 'clamp(2.2rem, 8vh, 5.2rem)' }}>
+        <section className="premium-auth-section premium-otp-section" style={{ marginTop: 'clamp(2.2rem, 8vh, 5.2rem)' }}>
           <BoltBrand />
 
           <div style={{ marginTop: '2.25rem' }}>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
 import {
@@ -374,11 +373,11 @@ export default function UploadPage() {
   // ── Upload screen ─────────────────────────
   return (
     <main className="bolt-page bolt-page-with-nav">
-      <div className="bolt-page-shell premium-enter">
+      <div className="bolt-page-shell premium-enter bolt-upload-shell">
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: 'var(--bs-text-muted)', cursor: 'pointer' }}>
+      <div className="bolt-upload-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
+        <button className="bolt-upload-back" onClick={() => router.back()} style={{ background: 'none', border: 'none', color: 'var(--bs-text-muted)', cursor: 'pointer' }} aria-label="Go back">
           <ArrowLeft size={20} />
         </button>
         <div>
@@ -387,22 +386,14 @@ export default function UploadPage() {
         </div>
       </div>
 
-      {!isAuthenticated && (
-        <div style={{ marginBottom: '1rem', padding: '0.9rem 1rem', borderRadius: '14px', border: '1px solid rgba(245,197,24,0.24)', background: 'rgba(245,197,24,0.07)', color: 'var(--bs-text-2)', fontSize: '0.78rem', lineHeight: 1.55 }}>
-          <strong style={{ display: 'block', color: 'var(--bs-text)', marginBottom: '0.15rem' }}>No account required</strong>
-          Upload and create an expiring share link as a guest. An account is only needed for saved history, analytics, and teams.{' '}
-          <Link href="/" style={{ color: 'var(--bs-gold)', textDecoration: 'underline', textUnderlineOffset: 3 }}>Sign in</Link>
-        </div>
-      )}
-
       {/* Trust badges */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+      <div className="bolt-upload-badges" style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         {[
           { icon: Shield, label: t('upload.secure'), color: '#1D9E75' },
           { icon: Zap,    label: t('upload.direct'), color: '#F5C518' },
           { icon: CheckCircle, label: t('upload.expiring'), color: '#60A5FA' },
         ].map(({ icon: Icon, label, color }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '20px', padding: '4px 10px' }}>
+          <div className="bolt-upload-badge" key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '20px', padding: '4px 10px' }}>
             <Icon size={12} color={color} />
             <span style={{ fontSize: '0.72rem', color: 'var(--bs-text-2)', fontWeight: 500 }}>{label}</span>
           </div>
@@ -411,6 +402,7 @@ export default function UploadPage() {
 
       {/* Drop zone */}
       <div
+        className="bolt-upload-dropzone"
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
@@ -420,19 +412,20 @@ export default function UploadPage() {
           borderRadius: '20px',
           background: dragging ? 'rgba(245,197,24,0.2)' : 'rgba(245,197,24,0.06)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: '2.5rem 1.5rem', cursor: 'pointer', marginBottom: '1rem',
+          cursor: 'pointer',
           transition: 'all 0.15s', textAlign: 'center',
           boxShadow: dragging ? '0 0 32px rgba(245,197,24,0.15)' : 'none',
         }}
       >
-        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(245,197,24,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', filter: 'drop-shadow(0 0 16px rgba(245,197,24,0.4))' }}>
+        <div className="bolt-upload-drop-icon" style={{ borderRadius: '50%', background: 'rgba(245,197,24,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', filter: 'drop-shadow(0 0 16px rgba(245,197,24,0.4))' }}>
           <CloudUpload size={30} color="#F5C518" />
         </div>
-        <p style={{ color: 'var(--bs-text)', fontWeight: 600, fontSize: '1rem', marginBottom: '4px' }}>
-          {t('upload.drop')}
+        <p className="bolt-upload-drop-title" style={{ color: 'var(--bs-text)', fontWeight: 600 }}>
+          <span className="bolt-upload-desktop-copy">{t('upload.drop')}</span>
+          <span className="bolt-upload-mobile-copy">Choose files</span>
         </p>
-        <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem', marginBottom: '4px' }}>{t('upload.browse')}</p>
-        <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.75rem' }}>{t('upload.capacity')}</p>
+        <p className="bolt-upload-browse" style={{ color: 'var(--bs-text-muted)' }}>{t('upload.browse')}</p>
+        <p className="bolt-upload-capacity" style={{ color: 'var(--bs-text-muted)' }}>{t('upload.capacity')}</p>
         <input ref={inputRef} type="file" multiple onChange={onPick} style={{ display: 'none' }} />
       </div>
 
@@ -468,7 +461,7 @@ export default function UploadPage() {
       )}
 
       {/* Link settings */}
-      <div style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
+      <div className="bolt-upload-settings" style={{ background: 'var(--bs-surface)', border: '0.5px solid var(--bs-border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '1.25rem' }}>
         <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--bs-text)', borderBottom: '0.5px solid var(--bs-border)' }}>{t('upload.linkSettings')}</div>
 
         {/* Expiry */}
@@ -521,6 +514,7 @@ export default function UploadPage() {
 
       {/* Upload button */}
       <button
+        className="bolt-upload-submit"
         onClick={handleUpload}
         disabled={uploading || files.length === 0}
         style={{ width: '100%', background: uploading || files.length === 0 ? 'var(--bs-text-dim)' : '#F5C518', color: uploading || files.length === 0 ? '#888' : '#000', border: 'none', borderRadius: '14px', padding: '1rem', fontWeight: 700, fontSize: '1rem', cursor: uploading || files.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.15s' }}

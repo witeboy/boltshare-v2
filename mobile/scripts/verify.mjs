@@ -108,7 +108,7 @@ expect('Deep links are handled on cold and warm starts', bridgeScript.includes('
 expect('Custom-scheme links are translated to HTTPS', bridgeScript.includes("parsed.protocol === 'boltshare:'"));
 expect('Android back is handled', bridgeScript.includes('backButton') && bridgeScript.includes('minimizeApp'));
 expect('Web-deployed and native-injected bridges match', bridgeScript.trim() === publicBridgeScript.trim());
-expect('Injected bridge upgrades an older deployed bridge safely', bridgeScript.includes('BRIDGE_VERSION = 4') && bridgeScript.includes('legacyBridgeAlreadyInstalled') && bridgeScript.includes('installAdSignals();'));
+expect('Injected bridge upgrades an older deployed bridge safely', bridgeScript.includes('BRIDGE_VERSION = 5') && bridgeScript.includes('legacyBridgeAlreadyInstalled') && bridgeScript.includes('installAdSignals();'));
 expect('AdMob feature is enabled in app config', appConfig.features.ads === true);
 expect('Android AdMob application ID matches app config', manifest.includes(`android:value="${appConfig.android.adMob.appId}"`));
 expect('Google Mobile Ads and UMP dependencies exist on Android', gradle.includes('play-services-ads:25.4.0') && gradle.includes('user-messaging-platform:4.0.0'));
@@ -168,7 +168,7 @@ expect('Artwork generator produces the required opaque PNG sizes', artworkGenera
 expect('Codemagic workflow builds the registered bundle for TestFlight', codemagic.includes(`bundle_identifier: ${expectedIosId}`) && codemagic.includes('pattern: main') && codemagic.includes('MIN_IOS_BUILD_NUMBER: 12') && codemagic.includes('pnpm sync:ios') && codemagic.includes('xcode-project build-ipa') && codemagic.includes('submit_to_testflight: true'));
 
 expect('Signed-out landing exposes guest file transfer', homePage.includes('Send a file without an account') && homePage.includes('Continue without an account'));
-expect('Upload UI does not redirect guests to sign-in', uploadPage.includes('No account required') && !uploadPage.includes("if (!isAuthenticated) { router.push('/'); return }"));
+expect('Upload UI allows guests without repeating account messaging', !uploadPage.includes('No account required') && !uploadPage.includes("if (!isAuthenticated) { router.push('/'); return }"));
 expect('Guest session is HttpOnly, signed, and does not collect email', transferOwner.includes("httpOnly: true") && transferOwner.includes("name: 'HMAC'") && transferOwner.includes('email: null'));
 expect('Every multipart route accepts the secure guest owner', authorizeRoute.includes('getTransferOwner') && partUrlsRoute.includes('getTransferOwner') && completeRoute.includes('getTransferOwner'));
 expect('Database schema supports exactly one account or guest owner', guestMigration.includes('num_nonnulls(user_id, guest_id) = 1') && guestMigration.includes('shared_files_owner_check'));

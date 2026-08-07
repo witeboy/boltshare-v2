@@ -1,7 +1,7 @@
 (function initializeBoltShareMobileBridge() {
   'use strict';
 
-  var BRIDGE_VERSION = 4;
+  var BRIDGE_VERSION = 5;
   if (window.__boltShareMobileBridgeVersion === BRIDGE_VERSION) return;
   var legacyBridgeAlreadyInstalled = Boolean(window.__boltShareMobileBridgeInstalled);
   window.__boltShareMobileBridgeInstalled = true;
@@ -49,12 +49,13 @@
     style.id = 'boltshare-native-safe-areas';
     style.textContent = [
       'html{background:#0d0d0d}',
-      'body{',
-      'padding-top:env(safe-area-inset-top);',
-      'padding-left:env(safe-area-inset-left);',
-      'padding-right:env(safe-area-inset-right);',
-      'padding-bottom:calc(env(safe-area-inset-bottom) + var(--bs-native-banner-space,0px));',
+      ':root{',
+      '--bs-safe-top:env(safe-area-inset-top,0px);',
+      '--bs-safe-right:env(safe-area-inset-right,0px);',
+      '--bs-safe-bottom:env(safe-area-inset-bottom,0px);',
+      '--bs-safe-left:env(safe-area-inset-left,0px);',
       '}',
+      'body{padding:0}',
     ].join('');
     (document.head || document.documentElement).appendChild(style);
   }
