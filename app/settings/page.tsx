@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Check, ChevronRight, Clock, Download, Globe, HelpCircle, Info, Loader2,
-  LogOut, Mail, Moon, Save, Sun, Trash2, UserRound, Users,
+  LogOut, Mail, Moon, Save, Shield, Sun, Trash2, UserRound, Users,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import AppBottomNav from '@/components/boltshare/AppBottomNav'
@@ -74,7 +74,7 @@ export default function SettingsPage() {
 
   const supportLinks = [
     { icon: Users, label: t('settings.team'), href: '/team' },
-    { icon: HelpCircle, label: t('settings.help'), href: 'mailto:support@rcinc.app' },
+    { icon: HelpCircle, label: t('settings.help'), href: '/support' },
     { icon: Mail, label: t('settings.contact'), href: 'mailto:support@rcinc.app' },
   ]
   const deletionItems = ['settings.delete1', 'settings.delete2', 'settings.delete3', 'settings.delete4', 'settings.delete5']
@@ -178,6 +178,9 @@ export default function SettingsPage() {
               </a>
             ))}
             <div className="bolt-settings-row"><Info aria-hidden="true" /><span>{t('settings.about')}</span><small>{t('settings.version')}</small></div>
+            <button type="button" data-boltshare-ad-privacy className="bolt-settings-row" style={{ display: 'none', width: '100%', background: 'transparent', border: 0, cursor: 'pointer' }}>
+              <Shield aria-hidden="true" /><span>Ad privacy choices</span><ChevronRight aria-hidden="true" />
+            </button>
           </div>
         </section>
 

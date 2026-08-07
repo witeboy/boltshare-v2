@@ -94,6 +94,7 @@ export default function RootLayout({
             }}
           />
           </AuthProvider>
+          <script src="/mobile-bridge.js" defer />
         </PreferencesProvider>
       </body>
     </html>

@@ -226,14 +226,23 @@ export default function OnboardingPage() {
           </section>
 
           <footer style={{ paddingTop: '1.7rem' }}>
-            <button type="button" className="premium-primary-button" onClick={openEmailScreen}>
-              Get started
+            <Link href="/upload" className="premium-primary-button" style={{ textDecoration: 'none' }}>
+              Send a file without an account
               <ArrowRight size={18} />
+            </Link>
+
+            <button type="button" className="premium-secondary-button" onClick={openEmailScreen} style={{ marginTop: '0.72rem' }}>
+              Sign in for history and teams
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginTop: '1.05rem', color: '#73777c', fontSize: '0.72rem' }}>
               <ShieldCheck size={13} color="var(--bs-gold)" />
-              <span>No tracking. No ads. No data mining.</span>
+              <span>Your file contents are never used for advertising.</span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.8rem', fontSize: '0.7rem' }}>
+              <Link href="/support" style={{ color: '#8f9398' }}>Support</Link>
+              <Link href="/privacy" style={{ color: '#8f9398' }}>Privacy</Link>
             </div>
           </footer>
         </div>
@@ -302,6 +311,11 @@ export default function OnboardingPage() {
               </button>
             </form>
 
+            <Link href="/upload" className="premium-secondary-button" style={{ marginTop: '0.72rem', textDecoration: 'none' }}>
+              Continue without an account
+              <ArrowRight size={17} />
+            </Link>
+
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.38rem', alignItems: 'center', marginTop: '0.85rem', color: '#74797e', fontSize: '0.71rem' }}>
               <LockKeyhole size={12} color="var(--bs-gold)" />
               <span>No password required</span>
@@ -321,7 +335,7 @@ export default function OnboardingPage() {
                   <span className="premium-security-icon"><EyeOff size={15} /></span>
                   <div>
                     <div style={{ fontSize: '0.79rem', fontWeight: 660, color: '#f0f0ec' }}>Private by default</div>
-                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>No advertising profile, tracking pixels or data selling.</p>
+                    <p style={{ marginTop: '0.16rem', color: '#777c81', fontSize: '0.69rem', lineHeight: 1.5 }}>Your files are not used to personalize advertising or sold.</p>
                   </div>
                 </div>
                 <div className="premium-security-row">
@@ -339,7 +353,10 @@ export default function OnboardingPage() {
               <Link href="/privacy" style={{ color: '#92969b', textDecoration: 'underline', textUnderlineOffset: 3 }}>
                 Privacy Policy
               </Link>
-              .
+              {' '}or visit{' '}
+              <Link href="/support" style={{ color: '#92969b', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                Support
+              </Link>.
             </p>
           </section>
         </div>

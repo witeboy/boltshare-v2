@@ -7,7 +7,8 @@ import {
   getR2Config,
   MAX_PENDING_UPLOADS_PER_USER,
 } from '@/lib/r2'
-import { createAdminClient, createServerClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { getTransferOwner } from '@/lib/transfer-owner'
 
 export const runtime = 'nodejs'
 
@@ -22,11 +23,7 @@ export async function POST(req: NextRequest) {
   let uploadId = ''
 
   try {
-    const userClient = await createServerClient()
-    const { data: { user }, error: authError } = await userClient.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'You must be signed in to upload files' }, { status: 401 })
-    }
+    const owner = await getTransferOwner()
 
     const payload = await req.json()
     const fileSize = Number(payload.fileSize)
@@ -39,7 +36,7 @@ export async function POST(req: NextRequest) {
     const { count, error: countError } = await admin
       .from('pending_uploads')
       .select('object_path', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq(owner.isGuest ? 'guest_id' : 'user_id', owner.ownerId)
       .gt('expires_at', new Date().toISOString())
     if (countError) throw countError
     if ((count || 0) >= MAX_PENDING_UPLOADS_PER_USER) {
@@ -51,13 +48,14 @@ export async function POST(req: NextRequest) {
 
     const partSize = chooseR2PartSize(fileSize)
     const { bucket } = getR2Config()
-    objectPath = `${user.id}/${crypto.randomUUID()}`
+    objectPath = `${owner.ownerId}/${crypto.randomUUID()}`
     const multipart = await getR2Client().send(new CreateMultipartUploadCommand({
       Bucket: bucket,
       Key: objectPath,
       ContentType: cleanContentType(payload.fileType),
       Metadata: {
-        owner: user.id,
+        owner: owner.ownerId,
+        owner_type: owner.isGuest ? 'guest' : 'account',
         expected_size: String(fileSize),
       },
     }))
@@ -66,7 +64,8 @@ export async function POST(req: NextRequest) {
 
     const { error: pendingError } = await admin.from('pending_uploads').insert({
       object_path: objectPath,
-      user_id: user.id,
+      user_id: owner.userId,
+      guest_id: owner.guestId,
       expected_size: fileSize,
       storage_provider: 'r2',
       upload_id: uploadId,
@@ -79,6 +78,7 @@ export async function POST(req: NextRequest) {
       uploadId,
       partSize,
       partCount: Math.ceil(fileSize / partSize),
+      guest: owner.isGuest,
     })
   } catch (error) {
     if (objectPath && uploadId) {

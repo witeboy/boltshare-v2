@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
 import {
@@ -175,7 +176,7 @@ async function hashPassword(password: string) {
 
 export default function UploadPage() {
   const { t } = usePreferences()
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
   const router = useRouter()
 
   const [files, setFiles]         = useState<File[]>([])
@@ -205,18 +206,12 @@ export default function UploadPage() {
   const removeFile = (i: number) => setFiles(prev => prev.filter((_, idx) => idx !== i))
 
   const handleUpload = async () => {
-    if (!isAuthenticated) { router.push('/'); return }
     if (files.length === 0) { toast.error('Please select at least one file'); return }
     if (files.some(file => file.size <= 0)) { toast.error('Empty files cannot be uploaded'); return }
     if (usePassword && password.trim().length < 8) {
       toast.error('Use at least 8 characters for a protected share')
       return
     }
-    if (!user?.email) {
-      toast.error('Your account is missing an email address. Please sign in again.')
-      return
-    }
-
     setUploading(true)
     setProgress(0)
 
@@ -306,8 +301,8 @@ export default function UploadPage() {
     return (
       <main className="bolt-page bolt-page-with-nav">
         <div className="bolt-page-shell premium-enter">
-        <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--bs-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-          <ArrowLeft size={16} /> Back to dashboard
+        <button onClick={() => router.push(isAuthenticated ? '/dashboard' : '/upload')} style={{ background: 'none', border: 'none', color: 'var(--bs-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+          <ArrowLeft size={16} /> {isAuthenticated ? 'Back to dashboard' : 'Send another file'}
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
@@ -391,6 +386,14 @@ export default function UploadPage() {
           <p style={{ color: 'var(--bs-text-muted)', fontSize: '0.8rem', marginTop: '1px' }}>{t('upload.subtitle')}</p>
         </div>
       </div>
+
+      {!isAuthenticated && (
+        <div style={{ marginBottom: '1rem', padding: '0.9rem 1rem', borderRadius: '14px', border: '1px solid rgba(245,197,24,0.24)', background: 'rgba(245,197,24,0.07)', color: 'var(--bs-text-2)', fontSize: '0.78rem', lineHeight: 1.55 }}>
+          <strong style={{ display: 'block', color: 'var(--bs-text)', marginBottom: '0.15rem' }}>No account required</strong>
+          Upload and create an expiring share link as a guest. An account is only needed for saved history, analytics, and teams.{' '}
+          <Link href="/" style={{ color: 'var(--bs-gold)', textDecoration: 'underline', textUnderlineOffset: 3 }}>Sign in</Link>
+        </div>
+      )}
 
       {/* Trust badges */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>

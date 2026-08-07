@@ -11,7 +11,8 @@ import {
   getR2Config,
   isR2ObjectPath,
 } from '@/lib/r2'
-import { createAdminClient, createServerClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { getTransferOwner } from '@/lib/transfer-owner'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -46,11 +47,7 @@ export async function POST(req: NextRequest) {
   let objectCompleted = false
 
   try {
-    const userClient = await createServerClient()
-    const { data: { user }, error: authError } = await userClient.auth.getUser()
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'You must be signed in to finish uploads' }, { status: 401 })
-    }
+    const owner = await getTransferOwner()
 
     const payload = await req.json()
     const fileName = cleanFileName(typeof payload.fileName === 'string' ? payload.fileName : '')
@@ -62,7 +59,7 @@ export async function POST(req: NextRequest) {
     const maxDownloads = payload.maxDownloads === null ? null : Number(payload.maxDownloads)
     const passwordHash = typeof payload.passwordHash === 'string' ? payload.passwordHash : ''
 
-    if (!isR2ObjectPath(objectPath, user.id) || !uploadId) {
+    if (!isR2ObjectPath(objectPath, owner.ownerId) || !uploadId) {
       return NextResponse.json({ error: 'The uploaded file path is invalid' }, { status: 400 })
     }
     if (!Number.isSafeInteger(requestedSize) || requestedSize <= 0) {
@@ -83,7 +80,7 @@ export async function POST(req: NextRequest) {
       .from('pending_uploads')
       .select('expected_size, expires_at, storage_provider, upload_id, part_size')
       .eq('object_path', objectPath)
-      .eq('user_id', user.id)
+      .eq(owner.isGuest ? 'guest_id' : 'user_id', owner.ownerId)
       .maybeSingle()
     if (
       pendingError ||
@@ -137,7 +134,8 @@ export async function POST(req: NextRequest) {
         storage_provider: 'r2',
         storage_path: objectPath,
         share_token: shareToken,
-        sender_email: user.email.toLowerCase(),
+        sender_email: owner.email,
+        guest_id: owner.guestId,
         expires_at: expiresAt,
         expiry_hours: TRANSFER_TTL_HOURS,
         max_downloads: maxDownloads,

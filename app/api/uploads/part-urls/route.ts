@@ -2,7 +2,8 @@ import { UploadPartCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { NextRequest, NextResponse } from 'next/server'
 import { getR2Client, getR2Config, isR2ObjectPath } from '@/lib/r2'
-import { createAdminClient, createServerClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { getTransferOwner } from '@/lib/transfer-owner'
 
 export const runtime = 'nodejs'
 
@@ -10,11 +11,7 @@ const MAX_URLS_PER_REQUEST = 50
 
 export async function POST(req: NextRequest) {
   try {
-    const userClient = await createServerClient()
-    const { data: { user }, error: authError } = await userClient.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'You must be signed in to continue uploading' }, { status: 401 })
-    }
+    const owner = await getTransferOwner()
 
     const payload = await req.json()
     const objectPath = typeof payload.objectPath === 'string' ? payload.objectPath : ''
@@ -23,7 +20,7 @@ export async function POST(req: NextRequest) {
       ? payload.partNumbers.map((value: unknown) => Number(value))
       : []
     if (
-      !isR2ObjectPath(objectPath, user.id) ||
+      !isR2ObjectPath(objectPath, owner.ownerId) ||
       !uploadId ||
       partNumbers.length < 1 ||
       partNumbers.length > MAX_URLS_PER_REQUEST ||
@@ -37,7 +34,7 @@ export async function POST(req: NextRequest) {
       .from('pending_uploads')
       .select('expected_size, expires_at, storage_provider, upload_id, part_size')
       .eq('object_path', objectPath)
-      .eq('user_id', user.id)
+      .eq(owner.isGuest ? 'guest_id' : 'user_id', owner.ownerId)
       .maybeSingle()
     if (
       pendingError ||
