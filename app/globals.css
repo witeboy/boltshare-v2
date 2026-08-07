@@ -1614,13 +1614,13 @@ body {
 }
 
 .bolt-page-with-nav {
-  padding-bottom: calc(5.25rem + var(--bs-safe-bottom) + var(--bs-native-banner-space));
+  padding-bottom: calc(4.85rem + var(--bs-safe-bottom));
 }
 
 .bolt-bottom-nav {
   position: fixed;
   right: 0;
-  bottom: var(--bs-native-banner-space);
+  bottom: 0;
   left: 0;
   z-index: 1000;
   width: 100%;
@@ -1658,22 +1658,24 @@ body {
 }
 
 .bolt-page-shell {
-  padding-top: calc(0.72rem + var(--bs-safe-top));
-  padding-bottom: 1rem;
+  padding-top: calc(0.72rem + var(--bs-safe-top) + var(--bs-native-banner-space));
+  padding-bottom: 0.35rem;
 }
 
 .bolt-dashboard-shell {
-  padding-top: calc(0.55rem + var(--bs-safe-top));
-  padding-bottom: calc(5.35rem + var(--bs-safe-bottom) + var(--bs-native-banner-space));
+  padding-top: calc(0.55rem + var(--bs-safe-top) + var(--bs-native-banner-space));
+  padding-bottom: calc(5.35rem + var(--bs-safe-bottom));
 }
 
-.bolt-upload-shell { width: min(100%, 34rem); }
+.bolt-upload-page { overflow-x: clip; }
+.bolt-upload-shell { width: min(100%, 34rem); overflow-x: clip; }
+.bolt-upload-shell > * { max-width: 100%; }
 .bolt-upload-header { min-width: 0; margin-bottom: 0.72rem !important; }
 .bolt-upload-header > div { min-width: 0; }
 .bolt-upload-header h2 { font-size: 1.08rem !important; line-height: 1.2; }
 .bolt-upload-header p { overflow: hidden; font-size: 0.72rem !important; text-overflow: ellipsis; white-space: nowrap; }
 .bolt-upload-back { display: grid; width: 2.4rem; height: 2.4rem; flex: 0 0 auto; place-items: center; padding: 0; }
-.bolt-upload-badges { gap: 0.38rem !important; margin-bottom: 0.7rem !important; flex-wrap: nowrap !important; }
+.bolt-upload-badges { width: 100%; gap: 0.38rem !important; margin-bottom: 0.7rem !important; flex-wrap: nowrap !important; overflow: hidden; }
 .bolt-upload-badge { min-width: 0; gap: 0.25rem !important; padding: 0.24rem 0.48rem !important; }
 .bolt-upload-badge span { overflow: hidden; font-size: 0.65rem !important; text-overflow: ellipsis; white-space: nowrap; }
 .bolt-upload-badge svg { flex: 0 0 auto; }
@@ -1691,7 +1693,9 @@ body {
 .bolt-upload-capacity { max-width: 100%; font-size: 0.64rem; line-height: 1.25; }
 .bolt-upload-mobile-copy { display: none; }
 .bolt-upload-settings { margin-bottom: 0.72rem !important; }
-.bolt-upload-settings > div { padding-top: 0.65rem !important; padding-bottom: 0.65rem !important; }
+.bolt-upload-settings > div { min-width: 0; padding-top: 0.65rem !important; padding-bottom: 0.65rem !important; }
+.bolt-upload-settings > div > div,
+.bolt-upload-settings > div > span { min-width: 0; }
 .bolt-upload-submit { min-height: 2.9rem; padding: 0.72rem !important; font-size: 0.9rem !important; }
 
 @media (max-width: 600px) {

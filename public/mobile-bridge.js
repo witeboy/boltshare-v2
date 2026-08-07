@@ -1,7 +1,7 @@
 (function initializeBoltShareMobileBridge() {
   'use strict';
 
-  var BRIDGE_VERSION = 5;
+  var BRIDGE_VERSION = 6;
   if (window.__boltShareMobileBridgeVersion === BRIDGE_VERSION) return;
   var legacyBridgeAlreadyInstalled = Boolean(window.__boltShareMobileBridgeInstalled);
   window.__boltShareMobileBridgeInstalled = true;
@@ -105,7 +105,7 @@
     var LAUNCH_COOLDOWN_MS = 120000;
     var MIN_INTERSTITIAL_INTERVAL_MS = 180000;
     var SESSION_INTERSTITIAL_CAP = 12;
-    var ELIGIBLE_BANNER_PATHS = ['/dashboard', '/history', '/team'];
+    var ELIGIBLE_BANNER_PATHS = ['/dashboard', '/history', '/team', '/upload'];
 
     var launchedAt = Date.now();
     var initialized = false;
@@ -193,7 +193,7 @@
       return AdMob.showBanner({
         adId: adId(PRODUCTION_BANNER_ID, TEST_BANNER_ID),
         adSize: 'ADAPTIVE_BANNER',
-        position: 'BOTTOM_CENTER',
+        position: 'TOP_CENTER',
         margin: 0,
         isTesting: isTesting,
         npa: trackingStatus !== 'authorized',

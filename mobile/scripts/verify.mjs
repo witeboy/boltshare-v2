@@ -108,7 +108,7 @@ expect('Deep links are handled on cold and warm starts', bridgeScript.includes('
 expect('Custom-scheme links are translated to HTTPS', bridgeScript.includes("parsed.protocol === 'boltshare:'"));
 expect('Android back is handled', bridgeScript.includes('backButton') && bridgeScript.includes('minimizeApp'));
 expect('Web-deployed and native-injected bridges match', bridgeScript.trim() === publicBridgeScript.trim());
-expect('Injected bridge upgrades an older deployed bridge safely', bridgeScript.includes('BRIDGE_VERSION = 5') && bridgeScript.includes('legacyBridgeAlreadyInstalled') && bridgeScript.includes('installAdSignals();'));
+expect('Injected bridge upgrades an older deployed bridge safely', bridgeScript.includes('BRIDGE_VERSION = 6') && bridgeScript.includes('legacyBridgeAlreadyInstalled') && bridgeScript.includes('installAdSignals();'));
 expect('AdMob feature is enabled in app config', appConfig.features.ads === true);
 expect('Android AdMob application ID matches app config', manifest.includes(`android:value="${appConfig.android.adMob.appId}"`));
 expect('Google Mobile Ads and UMP dependencies exist on Android', gradle.includes('play-services-ads:25.4.0') && gradle.includes('user-messaging-platform:4.0.0'));
@@ -153,7 +153,7 @@ expect(
     && bridgeScript.indexOf('return requestTrackingIfAppropriate().then') < bridgeScript.indexOf('return AdMob.initialize'),
 );
 expect('iOS ads avoid app-open placement', !bridgeScript.includes('showAppOpenAd') && !bridgeScript.includes('prepareAppOpenAd'));
-expect('iOS banner is limited to non-critical routes', bridgeScript.includes("['/dashboard', '/history', '/team']"));
+expect('iOS banner uses a reserved top slot on eligible app routes', bridgeScript.includes("['/dashboard', '/history', '/team', '/upload']") && bridgeScript.includes("position: 'TOP_CENTER'"));
 expect('iOS interstitial has cooldown and session cap', bridgeScript.includes(`LAUNCH_COOLDOWN_MS = ${appConfig.ios.adMob.interstitialLaunchCooldownSeconds}000`) && bridgeScript.includes(`MIN_INTERSTITIAL_INTERVAL_MS = ${appConfig.ios.adMob.interstitialMinimumIntervalSeconds}000`) && bridgeScript.includes(`SESSION_INTERSTITIAL_CAP = ${appConfig.ios.adMob.interstitialSessionCap}`));
 expect(
   'iOS normalizer preserves AdMob, identity and committed artwork',

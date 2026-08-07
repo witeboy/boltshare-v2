@@ -298,7 +298,8 @@ export default function UploadPage() {
   // ── Link Created screen ───────────────────
   if (shareLink) {
     return (
-      <main className="bolt-page bolt-page-with-nav">
+      <>
+      <main className="bolt-page bolt-page-with-nav bolt-upload-page">
         <div className="bolt-page-shell premium-enter">
         <button onClick={() => router.push(isAuthenticated ? '/dashboard' : '/upload')} style={{ background: 'none', border: 'none', color: 'var(--bs-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
           <ArrowLeft size={16} /> {isAuthenticated ? 'Back to dashboard' : 'Send another file'}
@@ -365,14 +366,16 @@ export default function UploadPage() {
           Done
         </button>
         </div>
-        <AppBottomNav />
       </main>
+      <AppBottomNav />
+      </>
     )
   }
 
   // ── Upload screen ─────────────────────────
   return (
-    <main className="bolt-page bolt-page-with-nav">
+    <>
+    <main className="bolt-page bolt-page-with-nav bolt-upload-page">
       <div className="bolt-page-shell premium-enter bolt-upload-shell">
 
       {/* Header */}
@@ -524,7 +527,8 @@ export default function UploadPage() {
 
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
-      <AppBottomNav />
     </main>
+    <AppBottomNav />
+    </>
   )
 }
