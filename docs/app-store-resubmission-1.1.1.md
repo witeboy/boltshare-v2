@@ -41,7 +41,7 @@ Hello App Review,
 Thank you for the detailed feedback. We addressed each issue in a new build:
 
 - **Guideline 5.1.1(v):** File transfer no longer requires registration. From the first screen, tap **Send a file without an account**. Guests can select files, upload, create an expiring link/code, set a password, and set a download limit without providing an email address. Sign-in is optional and is used only for account-based history, analytics, and team features.
-- **Guideline 2.1(a):** We added the required camera, microphone, and photo-library purpose strings for the iOS file picker. We tested **Take Photo or Video** on iPad, including allow and deny paths, without a crash.
+- **Guideline 2.1(a):** We added the required camera, microphone, and photo-library purpose strings used by the iOS file picker. This addresses the missing native permission descriptions that caused the app to terminate when **Take Photo or Video** was selected.
 - **Guideline 1.5:** The Support URL is now `https://boltshare.rcinc.app/support`, which includes direct contact information and support resources.
 - **Guideline 2.1 / ATT:** BoltShare does not track users across apps or websites owned by other companies. The updated build removes the ATT request and usage-description key, does not access IDFA, disables Google Mobile Ads publisher first-party ID, and requests only non-personalized ads. We updated the App Privacy answers to state that advertising data is not used for tracking, so an ATT prompt is not applicable.
 
