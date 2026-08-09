@@ -46,7 +46,7 @@ export default function PrivacyPolicyPage() {
               <li><strong style={{ color: '#fff' }}>Files and transfer data:</strong> uploaded file content, file name, type, size, share settings, transfer code, expiry, download limit, and optional recipient email.</li>
               <li><strong style={{ color: '#fff' }}>Team data:</strong> organization name, membership, role, and invited member email addresses.</li>
               <li><strong style={{ color: '#fff' }}>Download and security data:</strong> download time, IP address, user-agent information, and download count.</li>
-              <li><strong style={{ color: '#fff' }}>Advertising data in the mobile apps:</strong> device and advertising identifiers, approximate location derived from IP address, ad interactions, consent choices, crash information, performance information, and diagnostics may be processed by Google Mobile Ads to serve, measure, and protect ads.</li>
+              <li><strong style={{ color: '#fff' }}>Advertising data in the mobile apps:</strong> app-bound device information, approximate location derived from IP address, ad interactions, consent choices, crash information, performance information, and diagnostics may be processed by Google Mobile Ads to serve, measure, and protect non-personalized ads. BoltShare does not request Apple&apos;s advertising identifier.</li>
               <li><strong style={{ color: '#fff' }}>Support data:</strong> information you include when you contact support.</li>
             </ul>
           </section>
@@ -68,7 +68,7 @@ export default function PrivacyPolicyPage() {
           <section style={sectionStyle}>
             <h2 style={{ fontSize: '1.2rem', margin: '0 0 0.75rem' }}>Advertising privacy choices</h2>
             <p style={{ color: '#B8B8B8', lineHeight: 1.75, margin: 0 }}>
-              Where required, the mobile apps request advertising consent through Google&apos;s User Messaging Platform and provide an Ad privacy choices entry in Settings. On iOS, Apple&apos;s App Tracking Transparency prompt asks whether BoltShare may access the device advertising identifier. Declining tracking never prevents file transfer or any other app feature; ads are requested without personalized tracking instead.
+              Where required, the mobile apps request advertising consent through Google&apos;s User Messaging Platform and provide an Ad privacy choices entry in Settings. On iOS, BoltShare does not request App Tracking Transparency permission, does not access Apple&apos;s advertising identifier, disables Google&apos;s publisher first-party identifier, and requests only non-personalized ads. BoltShare does not use advertising data to track people across apps or websites owned by other companies.
             </p>
           </section>
 

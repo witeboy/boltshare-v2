@@ -32,6 +32,7 @@ const [
   iosProject,
   iosPackage,
   iosNormalizer,
+  iosAdmobPlugin,
   aasaRoute,
   codemagic,
   artworkGenerator,
@@ -64,6 +65,7 @@ const [
   read('ios/App/App.xcodeproj/project.pbxproj'),
   read('ios/App/CapApp-SPM/Package.swift'),
   read('scripts/normalize-ios-package.mjs'),
+  read('node_modules/@capacitor-community/admob/ios/Sources/AdMobPlugin/AdMobPlugin.swift'),
   read('../app/.well-known/apple-app-site-association/route.ts'),
   read('../codemagic.yaml'),
   read('scripts/generate-ios-artwork.swift'),
@@ -108,7 +110,7 @@ expect('Deep links are handled on cold and warm starts', bridgeScript.includes('
 expect('Custom-scheme links are translated to HTTPS', bridgeScript.includes("parsed.protocol === 'boltshare:'"));
 expect('Android back is handled', bridgeScript.includes('backButton') && bridgeScript.includes('minimizeApp'));
 expect('Web-deployed and native-injected bridges match', bridgeScript.trim() === publicBridgeScript.trim());
-expect('Injected bridge upgrades an older deployed bridge safely', bridgeScript.includes('BRIDGE_VERSION = 6') && bridgeScript.includes('legacyBridgeAlreadyInstalled') && bridgeScript.includes('installAdSignals();'));
+expect('Injected bridge upgrades an older deployed bridge safely', bridgeScript.includes('BRIDGE_VERSION = 7') && bridgeScript.includes('legacyBridgeAlreadyInstalled') && bridgeScript.includes('installAdSignals();'));
 expect('AdMob feature is enabled in app config', appConfig.features.ads === true);
 expect('Android AdMob application ID matches app config', manifest.includes(`android:value="${appConfig.android.adMob.appId}"`));
 expect('Google Mobile Ads and UMP dependencies exist on Android', gradle.includes('play-services-ads:25.4.0') && gradle.includes('user-messaging-platform:4.0.0'));
@@ -122,7 +124,7 @@ expect('Interstitial natural-break bridge exists', nativePlugin.includes('natura
 expect('Android interstitial policy controls match app config', adsConfig.includes(`INTERSTITIAL_LAUNCH_COOLDOWN_MS = ${appConfig.android.adMob.interstitialLaunchCooldownSeconds}_000L`) && adsConfig.includes(`INTERSTITIAL_MIN_INTERVAL_MS = ${appConfig.android.adMob.interstitialMinimumIntervalSeconds}_000L`) && adsConfig.includes(`INTERSTITIAL_ROUTE_THRESHOLD = ${appConfig.android.adMob.interstitialRouteThreshold}`) && adsConfig.includes(`INTERSTITIAL_SESSION_CAP = ${appConfig.android.adMob.interstitialSessionCap}`));
 expect('Native ad is clearly labelled and has AdChoices', strings.includes('<string name="native_ad_label">Ad</string>') && nativeAdLayout.includes('android:text="@string/native_ad_label"') && nativeAdLayout.includes('AdChoicesView'));
 expect('Ad privacy choices bridge exists', nativePlugin.includes('showAdPrivacyOptions') && bridgeScript.includes('data-boltshare-ad-privacy'));
-expect('Privacy policy covers mobile AdMob and ATT', privacyPolicy.includes('Google AdMob') && privacyPolicy.includes('Android and iOS apps') && privacyPolicy.includes('App Tracking Transparency'));
+expect('Privacy policy explains non-tracking mobile ads', privacyPolicy.includes('Google AdMob') && privacyPolicy.includes('does not request App Tracking Transparency permission') && privacyPolicy.includes('does not use advertising data to track'));
 expect('app-ads.txt declares the AdMob publisher', appAdsText.includes('pub-9689004813456541') && appAdsText.includes('f08c47fec0942fa0'));
 
 expect('iOS bundle ID matches registered App ID', iosProject.includes(`PRODUCT_BUNDLE_IDENTIFIER = ${expectedIosId};`));
@@ -132,7 +134,8 @@ expect('iOS build number is configured', new RegExp(`CURRENT_PROJECT_VERSION = (
 expect('iOS deployment target matches', iosProject.includes(`IPHONEOS_DEPLOYMENT_TARGET = ${appConfig.ios.deploymentTarget};`));
 expect('iOS custom URL scheme exists', iosInfo.includes(`<string>${appConfig.identity.urlScheme}</string>`));
 expect('iOS AdMob App ID is in Info.plist', iosInfo.includes(`<string>${appConfig.ios.adMob.appId}</string>`));
-expect('iOS ATT purpose string exists', iosInfo.includes('<key>NSUserTrackingUsageDescription</key>'));
+expect('iOS ATT purpose string is absent', !iosInfo.includes('<key>NSUserTrackingUsageDescription</key>'));
+expect('iOS declares only exempt encryption', iosInfo.includes('<key>ITSAppUsesNonExemptEncryption</key>') && iosInfo.includes('<false/>'));
 expect('iOS file-picker camera purpose string exists', appConfig.ios.filePickerCameraCapture === true && iosInfo.includes('<key>NSCameraUsageDescription</key>'));
 expect('iOS video capture microphone purpose string exists', iosInfo.includes('<key>NSMicrophoneUsageDescription</key>'));
 expect('iOS photo-picker purpose string exists', iosInfo.includes('<key>NSPhotoLibraryUsageDescription</key>'));
@@ -140,17 +143,25 @@ expect('iOS ad measurement is delayed until explicit initialization', iosInfo.in
 expect('iOS SKAdNetwork configuration exists', iosInfo.includes('cstr6suwn9.skadnetwork') && iosInfo.includes('4fzdc2evr5.skadnetwork'));
 expect('iOS Universal Link entitlement exists', iosEntitlements.includes(`applinks:${expectedHost}`));
 expect('AASA uses the registered Team ID and bundle ID', aasaRoute.includes(expectedAppleTeamId) && aasaRoute.includes(expectedIosId));
-expect('Capacitor Community AdMob 8 is linked through SPM', iosPackage.includes('capacitor-community/admob.git') && iosPackage.includes(`exact: "${appConfig.ios.adMob.pluginVersion}"`) && iosPackage.includes('CapacitorCommunityAdmob'));
+expect('Capacitor Community AdMob 8 is linked through its locally patched SPM package', iosPackage.includes('path: "../../../node_modules/@capacitor-community/admob"') && iosPackage.includes('CapacitorCommunityAdmob'));
 expect('iOS Swift package paths are portable', !iosPackage.includes('\\'));
 expect('iOS bridge uses supplied production banner ID', bridgeScript.includes(appConfig.ios.adMob.bannerUnitId));
 expect('iOS bridge uses supplied production interstitial ID', bridgeScript.includes(appConfig.ios.adMob.interstitialUnitId));
 expect('iOS development testing path uses Google test units', bridgeScript.includes(appConfig.ios.adMob.testBannerUnitId) && bridgeScript.includes(appConfig.ios.adMob.testInterstitialUnitId));
 expect('iOS UMP consent gates ad requests', bridgeScript.includes('requestConsentInfo') && bridgeScript.includes('showConsentForm') && bridgeScript.includes('canRequestAds'));
-expect('iOS ATT flow is present', bridgeScript.includes('trackingAuthorizationStatus') && bridgeScript.includes('requestTrackingAuthorization'));
 expect(
-  'iOS ATT resolves while active before AdMob initializes',
-  bridgeScript.includes("document.visibilityState !== 'visible'")
-    && bridgeScript.indexOf('return requestTrackingIfAppropriate().then') < bridgeScript.indexOf('return AdMob.initialize'),
+  'iOS ads are non-personalized and do not request ATT',
+  appConfig.ios.adMob.personalizedAds === false
+    && !bridgeScript.includes('trackingAuthorizationStatus')
+    && !bridgeScript.includes('requestTrackingAuthorization')
+    && !bridgeScript.includes('trackingStatus')
+    && (bridgeScript.match(/npa: true/g) || []).length >= 2,
+);
+expect(
+  'Patched iOS AdMob plugin excludes ATT and publisher first-party ID',
+  !iosAdmobPlugin.includes('AppTrackingTransparency')
+    && !iosAdmobPlugin.includes('ATTrackingManager')
+    && iosAdmobPlugin.includes('setPublisherFirstPartyIDEnabled(false)'),
 );
 expect('iOS ads avoid app-open placement', !bridgeScript.includes('showAppOpenAd') && !bridgeScript.includes('prepareAppOpenAd'));
 expect('iOS banner uses a reserved top slot on eligible app routes', bridgeScript.includes("['/dashboard', '/history', '/team', '/upload']") && bridgeScript.includes("position: 'TOP_CENTER'"));
@@ -160,12 +171,14 @@ expect(
   iosNormalizer.includes('CapacitorCommunityAdmob')
     && iosNormalizer.includes(expectedIosId)
     && iosNormalizer.includes(expectedAppleTeamId)
+    && iosNormalizer.includes('enforceNoTrackingAdMob')
+    && iosNormalizer.includes('setPublisherFirstPartyIDEnabled(false)')
     && iosNormalizer.includes('verifyArtwork')
     && iosNormalizer.includes('AppIcon-512@2x.png')
     && iosNormalizer.includes('splash-2732x2732.png'),
 );
 expect('Artwork generator produces the required opaque PNG sizes', artworkGenerator.includes('canvasSize: 1024') && artworkGenerator.includes('canvasSize: 2732') && artworkGenerator.includes('hasAlpha: false') && artworkGenerator.includes('AppIcon-512@2x.png'));
-expect('Codemagic workflow builds the registered bundle for TestFlight', codemagic.includes(`bundle_identifier: ${expectedIosId}`) && codemagic.includes('pattern: main') && codemagic.includes('MIN_IOS_BUILD_NUMBER: 12') && codemagic.includes('pnpm sync:ios') && codemagic.includes('xcode-project build-ipa') && codemagic.includes('submit_to_testflight: true'));
+expect('Codemagic workflow uploads build 13 without requesting beta review', codemagic.includes(`bundle_identifier: ${expectedIosId}`) && codemagic.includes('pattern: main') && codemagic.includes('MIN_IOS_BUILD_NUMBER: 13') && codemagic.includes('pnpm sync:ios') && codemagic.includes('xcode-project build-ipa') && !codemagic.includes('submit_to_testflight: true'));
 
 expect('Signed-out landing exposes guest file transfer', homePage.includes('Send a file without an account') && homePage.includes('Continue without an account'));
 expect('Upload UI allows guests without repeating account messaging', !uploadPage.includes('No account required') && !uploadPage.includes("if (!isAuthenticated) { router.push('/'); return }"));

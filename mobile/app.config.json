@@ -59,6 +59,7 @@
     "filePickerCameraCapture": true,
     "adMob": {
       "pluginVersion": "8.0.0",
+      "personalizedAds": false,
       "appId": "ca-app-pub-9689004813456541~8841399077",
       "bannerUnitId": "ca-app-pub-9689004813456541/2838951715",
       "interstitialUnitId": "ca-app-pub-9689004813456541/9715497040",

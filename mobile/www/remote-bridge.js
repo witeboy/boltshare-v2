@@ -1,7 +1,7 @@
 (function initializeBoltShareMobileBridge() {
   'use strict';
 
-  var BRIDGE_VERSION = 6;
+  var BRIDGE_VERSION = 7;
   if (window.__boltShareMobileBridgeVersion === BRIDGE_VERSION) return;
   var legacyBridgeAlreadyInstalled = Boolean(window.__boltShareMobileBridgeInstalled);
   window.__boltShareMobileBridgeInstalled = true;
@@ -117,8 +117,6 @@
     var interstitialPreparing = false;
     var lastInterstitialAt = 0;
     var sessionInterstitialCount = 0;
-    var trackingStatus = 'notDetermined';
-
     var isTesting = false;
     try {
       var current = new URL(window.location.href);
@@ -157,7 +155,7 @@
       return AdMob.prepareInterstitial({
         adId: adId(PRODUCTION_INTERSTITIAL_ID, TEST_INTERSTITIAL_ID),
         isTesting: isTesting,
-        npa: trackingStatus !== 'authorized',
+        npa: true,
       }).then(function () {
         interstitialReady = true;
       }).catch(function (error) {
@@ -196,7 +194,7 @@
         position: 'TOP_CENTER',
         margin: 0,
         isTesting: isTesting,
-        npa: trackingStatus !== 'authorized',
+        npa: true,
       }).then(function () {
         bannerVisible = true;
         setBannerLayoutVisible(true);
@@ -205,31 +203,6 @@
         setBannerLayoutVisible(false);
         console.warn('[BoltShare] iOS banner failed to load', error);
       });
-    }
-
-    function requestTrackingIfAppropriate() {
-      if (typeof AdMob.trackingAuthorizationStatus !== 'function') return Promise.resolve();
-      return AdMob.trackingAuthorizationStatus().then(function (result) {
-        trackingStatus = result && result.status ? result.status : trackingStatus;
-        if (trackingStatus !== 'notDetermined' || typeof AdMob.requestTrackingAuthorization !== 'function') return;
-        return new Promise(function (resolve) {
-          function requestWhenActive() {
-            if (document.visibilityState !== 'visible') return;
-            document.removeEventListener('visibilitychange', requestWhenActive);
-            // iPadOS only presents ATT while the app is active and no other
-            // permission alert is being dismissed. Let the launch settle first.
-            window.setTimeout(resolve, 700);
-          }
-          document.addEventListener('visibilitychange', requestWhenActive);
-          requestWhenActive();
-        }).then(function () {
-          return AdMob.requestTrackingAuthorization();
-        }).then(function () {
-          return AdMob.trackingAuthorizationStatus();
-        }).then(function (updated) {
-          trackingStatus = updated && updated.status ? updated.status : trackingStatus;
-        });
-      }).catch(function () {});
     }
 
     function updateConsent() {
@@ -261,15 +234,13 @@
     function initialize() {
       if (initialized || initializing) return Promise.resolve();
       initializing = true;
-      // Resolve ATT before initializing measurement or requesting consent/ads.
-      // Denial never blocks the app; all ad requests remain non-personalized.
-      return requestTrackingIfAppropriate().then(function () {
-        return AdMob.initialize({
+      // BoltShare does not request ATT or IDFA access. UMP still resolves any
+      // regional consent requirements, and every ad request is non-personalized.
+      return AdMob.initialize({
         initializeForTesting: isTesting,
         tagForChildDirectedTreatment: false,
         tagForUnderAgeOfConsent: false,
         maxAdContentRating: 'ParentalGuidance',
-        });
       }).then(function () {
         return updateConsent();
       }).then(function () {

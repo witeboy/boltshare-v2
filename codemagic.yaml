@@ -15,7 +15,7 @@ workflows:
         APPLE_TEAM_ID: 7F6X98KNQ6
         XCODE_PROJECT: mobile/ios/App/App.xcodeproj
         XCODE_SCHEME: App
-        MIN_IOS_BUILD_NUMBER: 12
+        MIN_IOS_BUILD_NUMBER: 13
       node: 22
       xcode: latest
 
@@ -95,4 +95,3 @@ workflows:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true

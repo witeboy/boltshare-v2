@@ -41,14 +41,14 @@
 	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>BoltShare uses the camera only when you choose Take Photo or Video to add media to a file transfer.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>BoltShare uses the microphone only when you choose to record a video for a file transfer.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>BoltShare accesses only the photos or videos you choose to add to a file transfer.</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier is used to provide and measure personalized ads. Your files and transfer contents are never used for advertising.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
