@@ -1,0 +1,15 @@
+// Cloudflare Workers config for BoltShare (Next.js built with @opennextjs/cloudflare).
+// Secrets (Supabase service role, R2/Bunny/SendGrid keys, CRON_SECRET) are set with
+// `wrangler secret put` / the dashboard, never in this file.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "boltshare-web",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "boltshare-web" }],
+  "observability": { "enabled": true },
+  // Replaces the Vercel cron in vercel.json (daily 02:00 UTC -> /api/cleanup-expired-files).
+  "triggers": { "crons": ["0 2 * * *"] }
+}
