@@ -11,5 +11,8 @@
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "boltshare-web" }],
   "observability": { "enabled": true },
   // Replaces the Vercel cron in vercel.json (daily 02:00 UTC -> /api/cleanup-expired-files).
-  "triggers": { "crons": ["0 2 * * *"] }
+  "triggers": { "crons": ["0 2 * * *"] },
+  "routes": [{ "pattern": "boltshare.rcinc.app", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false
 }
